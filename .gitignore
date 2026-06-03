@@ -1,0 +1,6 @@
+# 별도 repo로 분리된 하위 프로젝트 (루트 앵커 — plans/ccnews 등 하위 동명 디렉터리는 무시 안 함)
+/comail/
+/ccnews/
+
+# 로컬 전용
+CLAUDE.md
