@@ -2,7 +2,7 @@
 
 - 프로젝트: ccnews (GitHub: `park-jun-woo/quest-ccnews`)
 - 작성일: 2026-06-03
-- 상태: 설계 확정 · 7-Phase 분할
+- 상태: 설계 확정 · 8-Phase 분할
 
 ## 목적
 
@@ -70,6 +70,9 @@ CC-NEWS 덤프에서 뉴스 기사를 읽어 **육하원칙(event6)** 을 추출
 | 005 | `structured-extraction` | JSON-LD/OG 추출 + 신뢰 게이트 → SKIPPED |
 | 006 | `event6-anchor-gate` | event6 추출 + 원어앵커/영어산출 + verdict |
 | 007 | `output` | 확정 기사 JSONL 증분 저장(`--out`, 기본값) |
+| 008 | `charset` | 문자셋 감지 → UTF-8 정규화 (ReadBody 디코드, 비-UTF8 모지바케 해소) |
+| 009 | `anchor-hardening` | event6 앵커 게이트 치즈 저항 강화 (빈/흔한 앵커·공허 value 차단) |
 
 ## 다음 단계
-Phase002(세션 스키마) 확정 → 구현은 002→003→…→007 순서(의존 체인).
+Phase002(세션 스키마) 확정 → 구현은 002→003→…→007 순서(의존 체인). Phase008(charset)은
+003(ReadBody) 디코드 보강으로 003 이후 어느 시점에나 합류 — 005/006의 추출·앵커 품질 선결조건.

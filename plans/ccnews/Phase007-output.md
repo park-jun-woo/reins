@@ -10,7 +10,7 @@
 비현실적). 경로는 `--out`으로 지정, 미지정 시 기본값.
 
 ## 왜 JSONL append인가
-- 인제스천은 무기한 → 종료-시점-export가 없음. 기사가 **종단상태(PASS/REVIEW/BLOCKED/SKIPPED)에
+- 인제스천은 무기한 → 종료-시점-export가 없음. 기사가 **종단상태(PASS/REVIEW/DONE/BLOCKED/SKIPPED)에
   도달할 때마다 한 줄 append**.
 - JSON 배열은 저장 시 전체 재기록(수GB 매번) → 불가. **JSONL은 줄 추가만(O(1))**.
 - 부수효과: `session.json`은 작업상태(커서·robots 캐시·진행 중 TODO)만 유지 → 비대화 방지.
@@ -18,7 +18,7 @@
 
 ## 출력 레코드 (한 줄 = 기사 1건)
 
-`status`로 collected(PASS/REVIEW)와 audit(BLOCKED/SKIPPED)를 한 파일에서 구분 — 경로 하나.
+`status`로 collected(PASS/REVIEW)와 audit(DONE/BLOCKED/SKIPPED)를 한 파일에서 구분 — 경로 하나.
 
 ```jsonc
 // PASS/REVIEW — 사용자 명시 수집항목 전부 포함
@@ -31,15 +31,21 @@
   "event6": { "who":{"value":"...(en)","anchors":["...(원어)"]},
               "when":{...}, "what":{...}, "where":null, "how":null, "why":null } }
 
-// BLOCKED/SKIPPED — 제외 감사(legality 증빙)
+// DONE/BLOCKED/SKIPPED — 제외 감사(legality·소진 증빙)
 { "url":"...", "host":"...", "status":"SKIPPED",
   "reason":"구조화 데이터 없음(JSON-LD/OG) — 신뢰 불가", "crawl_allowed":true }
 { "url":"...", "host":"...", "status":"BLOCKED",
   "reason":"robots Disallow: /premium/", "crawl_allowed":false }
+{ "url":"...", "host":"...", "status":"DONE",
+  "reason":"...(verdict_reason 폴백 — MaxTries 소진)", "crawl_allowed":true }
 ```
 
+- DONE(시도 소진)도 audit 레코드로 emit한다(사용자 결정). audit `reason`은 `skip_reason`,
+  DONE처럼 `skip_reason`이 없으면 `verdict_reason`으로 폴백(코드 `renderAudit` 반영).
+
 - event6 `value`는 영어, `anchors`는 원어(Phase006). 본문 텍스트는 출력 안 함(사실만).
-- 매체명+원문URL = CC-BY 출처표시 충족. collected만 추리려면 `status` 필터.
+- 매체명+원문URL = CC-BY 출처표시 충족. collected(PASS/REVIEW)만 추리려면 `status` 필터,
+  audit(DONE/BLOCKED/SKIPPED)는 제외 사유 서사용.
 
 ## CLI / 동작
 - 별도 export 명령 없음. `ccnews run`/`submit`이 종단 도달 시 `--out` 파일에 한 줄 append.
