@@ -45,10 +45,10 @@ CC-NEWS 덤프에서 뉴스 기사를 읽어 **육하원칙(event6)** 을 추출
 
 | 명령 | 역할 |
 |---|---|
-| `ccnews run` | 투트랙 인제스천 루프(다운로드→처리). forward/backward |
-| `ccnews next` / `submit` | 기사 퀘스트(event6) 생성·제출·검증 |
-| `ccnews status` | 진행 현황 + REVIEW/BLOCKED/SKIPPED |
-| (export 없음) | 확정 기사는 `--out` JSONL로 **증분 저장**(Phase007). xlsx/csv 일괄 export는 폐기 |
+| `ccnews run` | 투트랙 인제스천 루프(다운로드→레코드→기사 추가→커서 전진). `--track forward\|backward\|both` |
+| `ccnews next` | 다음 TODO 기사 1건 + 원문 본문 + event6 작성 프롬프트 출력 |
+| `ccnews submit` | `--url`/`--event6`로 제출된 event6를 앵커 게이트로 검증·잠금/재시도 |
+| (export 없음) | 종단 기사는 `--out` JSONL로 **증분 sweep 저장**(Phase007). xlsx/csv 일괄 export는 폐기 |
 
 ## 확정된 핵심 결정
 
@@ -72,6 +72,7 @@ CC-NEWS 덤프에서 뉴스 기사를 읽어 **육하원칙(event6)** 을 추출
 | 007 | `output` | 확정 기사 JSONL 증분 저장(`--out`, 기본값) |
 | 008 | `charset` | 문자셋 감지 → UTF-8 정규화 (ReadBody 디코드, 비-UTF8 모지바케 해소) |
 | 009 | `anchor-hardening` | event6 앵커 게이트 치즈 저항 강화 (빈/흔한 앵커·공허 value 차단) |
+| 010 | `when-optional` | when 필수 해제 + 발행일 구조화 데이터 직공급(extract.Apply 배선) |
 
 ## 다음 단계
 Phase002(세션 스키마) 확정 → 구현은 002→003→…→007 순서(의존 체인). Phase008(charset)은

@@ -2,7 +2,7 @@
 
 - 프로젝트: ccnews (GitHub: `park-jun-woo/quest-ccnews`)
 - 작성일: 2026-06-03
-- 상태: 설계 — 구현 대기
+- 상태: 완료
 - 의존: Phase006(event6 앵커 게이트), Phase005(구조화 추출)
 
 ## 목적

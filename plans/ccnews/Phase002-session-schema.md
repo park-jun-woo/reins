@@ -1,6 +1,6 @@
 # Phase 002 — 세션 스키마 & 상태기계
 
-- 프로젝트: ccnews · 작성일: 2026-06-03 · 상태: 설계 확정
+- 프로젝트: ccnews · 작성일: 2026-06-03 · 상태: 완료
 - 의존: Phase001(개요)
 
 ## 목적
@@ -62,7 +62,7 @@
 
 ```
 TODO ─┬─► PASS      필수(who/when/what) 앵커 완료
-      ├─► REVIEW    해석필드(how/why) 사람 확인 필요
+      ├─► REVIEW    선택필드(where/how/why) 중 present한데 유효앵커 0개 — 사람 확인 필요
       ├─► DONE      MaxTries 초과(추출/앵커 실패)
       ├─► BLOCKED   robots 거부 (skip_reason 기록)
       └─► SKIPPED   구조화 데이터 없음 — 신뢰 불가 (skip_reason 기록)
