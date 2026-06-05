@@ -4,3 +4,6 @@
 
 # 로컬 전용
 CLAUDE.md
+
+# tsma 런타임 세션 상태
+.tsma/

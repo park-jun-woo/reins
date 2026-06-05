@@ -1,0 +1,3 @@
+# 별도 Go 모듈(자체 go.mod)이라 reins 모듈에서 테스트 불가 — tsma 인덱싱 제외
+ccnews/
+comail/

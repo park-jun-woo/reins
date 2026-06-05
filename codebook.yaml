@@ -1,0 +1,15 @@
+required:
+  feature:
+    textmatch: "deterministic substring verifier — does a token literally appear in the source (NFC + whitespace-collapse, no fuzzy/synonyms); the anti-hallucination primitive gate rules call for cheese defense"
+    quest: "irreversible-progress core — one-way ratchet state machine, session persistence, progress tally, verdict application, terminal export (pure: no Cobra/toulmin/domain)"
+    gate: "deterministic verifier framework — a quest gate is a catalog of violation-detecting rules; each rule fires + emits a Fact, severity is a Level, Evaluate aggregates by level"
+    temporal: "deterministic time-spec normalizer — converts an AI-identified structured time Spec (calendar/components/offset) to canonical Gregorian ISO (single/interval); undecidable → Determined=false"
+    cli: "Cobra command scaffold — the how-make-quest canonical skeleton (scan/next/submit/status/export) plus the rules rulebook; does IO/parsing/output only, never judges state"
+  type:
+    command: "cobra command entrypoint"
+    model: "data type definition"
+    helper: "internal utility function"
+
+optional:
+  level:
+    error: "error-path handling"

@@ -1,0 +1,3 @@
+# 별도 Go 모듈(자체 go.mod) — reins filefunc 검증 대상 아님
+ccnews/
+comail/
