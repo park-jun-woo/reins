@@ -1,4 +1,4 @@
-//ff:func feature=gate type=helper control=sequence
+//ff:func feature=gate type=helper control=iteration dimension=1
 //ff:what verdictFromLevels가 레벨 플래그를 Verdict로 환원하는지 검증한다 — anyFail→FAIL(우선), anyReview→REVIEW, 둘 다 거짓→PASS, Facts 전달.
 
 package gate
