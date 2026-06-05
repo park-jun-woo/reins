@@ -7,38 +7,53 @@ AI 에이전트는 멀티스텝 작업에서 *자기 완료를 자기가 판정*
 결정론적 **게이트**에 넘겨, 불안정한 생성기로도 신뢰 가능한 완료를 만든다. 에이전트는 일회용,
 진행은 누적된다.
 
+> **상세 API·패턴은 [MANUAL.md](MANUAL.md)** (Manual for AI Agents) 참조. 본 문서는 개요.
+
 ## 핵심 모델
 
 - **래칫(ratchet)** — 한 방향 상태기계. 한 번 PASS면 불가역, 남은 일은 단조감소
   (`remaining(t+1) ≤ remaining(t)`).
-- **게이트 = 규칙 카탈로그** — 위반 탐지 규칙의 집합(yongol/toulmin 패턴). 각 규칙이 문제 발견 시
-  발동(true)하고 사실(`Fact`)을 싣는다. 심각도는 **레벨**(Fail/Review) — 가중치가 아니라 레벨이라
-  결정적 위반 1개가 곧 FAIL이다. `Evaluate`가 발동 규칙을 레벨로 집계해 PASS/REVIEW/FAIL을 낸다.
+- **게이트 = 규칙 카탈로그** — 위반 탐지 규칙의 집합. 각 규칙이 문제 발견 시 발동(true)하고 사실
+  (`Fact`)을 싣는다. 심각도는 **레벨**(Fail/Review) — 가중치가 아니라 레벨이라 결정적 위반 1개가 곧
+  FAIL. `Evaluate`가 발동 규칙을 레벨로 집계해 PASS/REVIEW/FAIL을 낸다.
 - **권한 비대칭** — PASS 잠금은 **기계만**. L1 기계(결정론, PASS 단독권) / L2 AI(회의자, REVIEW만) /
   L3 사람(잔여).
 - **사실 피드백** — FAIL은 의견이 아니라 위치·기대·실제값(`Fact`). 모델의 아첨 성향을 *수렴*으로
   돌린다.
 
+## 두 게이트 백엔드
+
+| 백엔드 | 언제 | 무엇 |
+|---|---|---|
+| **레벨집계** (`pkg/gate`) | 독립 규칙·단순 게이트 | `Rule` 카탈로그 + `Evaluate`. any Fail→FAIL, else Review→REVIEW, else PASS |
+| **defeat 그래프** (`pkg/graph`) | 규칙 간 우선순위·근본원인 피드백 | toulmin h-Categoriser 백엔드. tautology PASS 워런트 + 위반 Counter + **`Supersedes`** 우선순위. 손으로 짠 가드를 선언적 엣지로 증발. 엣지0이면 레벨집계와 동치 |
+
+defeat 그래프는 `Definition`이 `gate.Evaluator`를 구현하면 켜진다(opt-in). 부작용(HTTP/DNS)은
+`pkg/ground` 원시연산 + **staged 평가**로 격리 — 싼 검사 실패 시 네트워크 fetch 자체가 안 일어난다.
+그래프 평가는 에이전트 직통 **공략집**(`Verdict.Feedback`: "왜 졌나 + 뭘 바꿔야 이기나")을 낸다.
+
+> toulmin은 `pkg/graph`·`pkg/ground`에만 결합되며 단방향(toulmin은 reins를 모름). `pkg/gate`·
+> `pkg/cli`는 toulmin-free라, 그래프를 안 쓰는 소비자는 toulmin을 링크하지 않는다.
+
 ## 아키텍처 (`pkg/`)
 
 | 패키지 | 역할 | 의존 |
 |---|---|---|
-| `pkg/textmatch` | 본문 포함 검증기 — `Normalize`(NFC+공백)·`Contains`·`MissingTokens`. 환각 차단 원시연산 | x/text |
-| `pkg/temporal` | 시간 명세 정규화 — 구조화 `Spec`(역법/성분/오프셋) → 그레고리력 ISO. 미정은 `Determined=false` | (순수) |
+| `pkg/textmatch` | 본문 포함 검증기 — `Normalize`(NFC)·`Contains`·`MissingTokens`. 환각 차단 원시연산 | x/text |
+| `pkg/temporal` | 시간 명세 정규화 — 구조화 `Spec`(역법/성분/오프셋) → 그레고리력 ISO | (순수) |
 | `pkg/quest` | 래칫 코어 — `State`·`Item`·`Verdict`/`Fact`·`Apply`·`Session`·`Export` | (순수) |
-| `pkg/gate` | 규칙 카탈로그 — `Rule`·`RuleMeta`·`Context`·`Definition`·`Evaluate`(레벨 집계)·`Catalog` | quest |
+| `pkg/gate` | 게이트 계약 — `Definition`·`Rule`·`Context`·`Evaluate`(레벨집계)·`Evaluator`(그래프 훅) | quest |
+| `pkg/graph` | defeat 그래프 백엔드 — `Graph`·`Warrant`·`Counter`·`Attacks`·`Supersedes`·`EvaluateStaged` | gate, quest, toulmin |
+| `pkg/ground` | 네트워크 ground 원시연산 — `HTTPBody`·`MXResolves`(주입형 `Resolver`·요청당 스냅샷) | (순수 net) |
 | `pkg/cli` | Cobra 스캐폴드 — `NewQuestCmd` → scan/next/submit/status/export/rules | cobra, quest, gate |
-
-검증기(textmatch/temporal)·quest 코어는 외부 비의존 순수. toulmin h-Categoriser(가중 논증)·defeat
-엣지는 *진짜 경합/L2 합의*용 **미래 백엔드 플러그인 지점**으로 예약(v1 미의존).
 
 ## 명령 골격 (how-make-quest 정설)
 
 ```
-scan    입력에서 N개 퀘스트 시드 + Progress 초기화 (스트리밍 소스는 run 변형)
+scan    입력에서 N개 퀘스트 시드 + Progress 초기화 (스트리밍 소스는 소비자가 run 변형 추가)
 next    TODO 하나 + 작성 프롬프트·검증 컨텍스트 출력
-submit  제출 → 규칙 카탈로그 평가 → 레벨 집계 verdict → PASS 잠금 / FAIL이면 Fact 피드백
-status  진행 집계 (PASS/REVIEW/DONE/TODO …)
+submit  제출 → 게이트 평가 → verdict → PASS 잠금 / FAIL이면 Fact·공략집 피드백
+status  진행 집계 (PASS/REVIEW/DONE/TODO/SKIPPED/BLOCKED …)
 export  종단 결과 JSONL 출력 (원본 보존, 1회 방출 래칫)
 rules   게이트 규칙 카탈로그 출력 (자동 rulebook — 막는 치즈 목록 감사)
 ```
@@ -51,10 +66,14 @@ rules   게이트 규칙 카탈로그 출력 (자동 rulebook — 막는 치즈 
 type Definition interface {
     Seed(args []string) ([]*quest.Item, error)            // 입력 → 초기 TODO 시드
     Render(it *quest.Item) (string, error)                // next가 보일 작성 프롬프트+검증 컨텍스트
-    Prepare(it *quest.Item, raw []byte) (gate.Context, *quest.Verdict, error) // 제출 디코드 (short verdict면 단락)
+    Prepare(it *quest.Item, raw []byte) (gate.Context, *quest.Verdict, error) // 제출 디코드 (short면 단락)
     Rules() []gate.Rule                                   // 게이트 위반-규칙 카탈로그
 }
 
+func main() { cli.NewQuestCmd("myquest", myDef{}, cli.Options{}).Execute() }
+```
+
+```go
 // 치즈 방어 규칙 1개 = 위반 탐지기. 새 치즈 발견 → 규칙 하나 추가하면 게이트가 자란다.
 var whoAnchorPresent = gate.Rule{
     Meta: gate.RuleMeta{ID: "who-anchor-present", Level: gate.LevelFail, Desc: "필수 who 앵커가 원문에 실재"},
@@ -66,26 +85,33 @@ var whoAnchorPresent = gate.Rule{
         return false, quest.Fact{}
     },
 }
-
-func main() { cli.NewQuestCmd("myquest", myDef{}, cli.Options{}).Execute() }
 ```
+
+규칙 간 우선순위·근본원인 피드백·네트워크 검증이 필요하면 그래프 백엔드(`pkg/graph` + `gate.Evaluator`
++ `pkg/ground`)로 — [MANUAL.md](MANUAL.md) 참조.
 
 ## 상태
 
-스캐폴드 v1 빌드 완료 — `go build ./...` · `go test ./...` 통과, `filefunc validate` 0 error/0 warn,
-tsma 0 TODO(전 함수 PASS/DONE), gofmt clean.
+v1 빌드 완료 — 7패키지 `go build`·`go test` 통과, `filefunc validate` 0/0, `tsma` 0 TODO(전 함수
+커버), gofmt clean. 레벨집계 + defeat 그래프 백엔드(toulmin) + ground/staged 평가까지 구현.
+
+**첫 실사용 소비자 `comail`(이메일 수집)이 reins 그래프 게이트 위에서 종단 동작 확인** — scan/next/
+submit/status/export, 그래프 판정·Supersedes·공략집 피드백·실네트워크 staged·래칫 잠금. (설계:
+`plans/reins/Phase007-toulmin-gate.md`)
 
 ## 저장소 구성
 
 - `pkg/` — 프레임워크 Go 모듈 (`github.com/park-jun-woo/reins`)
-- `plans/reins/` — 설계문서 (Phase001 헌장 + quest-core·gate·cli·textmatch·temporal)
-- `plans/ccnews/` — 인스턴스 ccnews 설계문서
-- `ccnews/`, `comail/` — 별도 모듈(자체 go.mod)인 퀘스트 인스턴스. reins를 import해 도메인 규칙만 구현
-  (`.ffignore`/`.tsmignore`로 reins 검증 대상에서 제외)
+- `MANUAL.md` — AI 에이전트용 상세 매뉴얼
+- `plans/reins/` — 설계문서 (Phase001~006 v1 스캐폴드, Phase007 toulmin 그래프 백엔드)
+- `plans/ccnews/`·`plans/comail/` — 인스턴스 설계 + reins 이식 Phase
+- `comail/`, `ccnews/` — 별도 모듈(자체 go.mod)인 퀘스트 인스턴스. reins를 import해 도메인만 구현
+  (`comail`은 그래프 게이트로 이식 완료, `ccnews`는 이식 설계 중)
 
 ## 규약
 
 - 결정론 게이트 명시 — 판정은 입력만으로, PASS 잠금은 기계만.
-- 규칙은 위반 탐지기, 심각도는 레벨로 — 가중치로 하드체크를 흉내내지 않는다.
+- 규칙은 위반 탐지기, 심각도는 레벨로 — 연속 가중은 그래프의 *진짜 경합*(L2 합의) 전용.
 - 치즈 방어 우선 — "이 게이트를 어떻게 속이지?"의 답마다 규칙 하나(자동 카탈로그로 감사).
-- N=1 추상화 금지 — 하니스/CLI는 ccnews 증류 v1, comail(2번째 소비자)로 검증 후 안정화.
+- 부작용은 ground로, 규칙은 순수 — 네트워크는 reins ground 원시연산이 소유, staged로 격리.
+- N=1 추상화 금지 — 새 추상은 2번째 소비자(`ccnews`)로 검증 후 동결.
