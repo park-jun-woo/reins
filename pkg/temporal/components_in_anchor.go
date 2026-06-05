@@ -1,6 +1,7 @@
-package temporal
+//ff:func feature=temporal type=helper control=iteration dimension=1
+//ff:what Start/End의 라틴숫자 런 성분이 모두 어떤 anchor에 실재하는지(textmatch 재사용) 검사해 엉뚱앵커(Türkiye·Kurtulmuş류)를 차단한다. 성분이 0개면 묶을 게 없어 true. 비라틴 숫자체계는 v1 미지원(v2).
 
-import "github.com/park-jun-woo/reins/pkg/textmatch"
+package temporal
 
 // ComponentsInAnchor reports whether every numeric component of the spec's Start/End
 // dates actually appears in some anchor (via textmatch.Contains). This blocks the
@@ -19,37 +20,4 @@ func ComponentsInAnchor(spec Spec, anchors []string) bool {
 		}
 	}
 	return true
-}
-
-// anchorsContain reports whether token appears in any of the anchors.
-func anchorsContain(anchors []string, token string) bool {
-	for _, a := range anchors {
-		if textmatch.Contains(a, token) {
-			return true
-		}
-	}
-	return false
-}
-
-// numericRuns returns the maximal runs of latin digits (0-9) found in s. Leading
-// zeros are preserved so the run matches the source surface form ("01" stays "01").
-func numericRuns(s string) []string {
-	var runs []string
-	start := -1
-	for i, r := range s {
-		if r >= '0' && r <= '9' {
-			if start < 0 {
-				start = i
-			}
-			continue
-		}
-		if start >= 0 {
-			runs = append(runs, s[start:i])
-			start = -1
-		}
-	}
-	if start >= 0 {
-		runs = append(runs, s[start:])
-	}
-	return runs
 }

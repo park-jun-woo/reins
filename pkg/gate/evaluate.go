@@ -1,3 +1,6 @@
+//ff:func feature=gate type=helper control=iteration dimension=1
+//ff:what 카탈로그를 제출 1건에 평가→발동 규칙을 레벨로 집계(가중치 아님). 발동 Fact는 규칙 ID로 스탬프되어 evidence로 수집되고, 집계된 레벨은 verdictFromLevels가 Verdict로 환원한다. 결정론: 같은 (rules, ctx)→같은 Verdict. defeat/h-Categoriser는 toulmin 백엔드 도입 시 여기 플러그인.
+
 package gate
 
 import "github.com/park-jun-woo/reins/pkg/quest"
@@ -20,29 +23,12 @@ func Evaluate(rules []Rule, ctx Context) quest.Verdict {
 		}
 		fact.Rule = r.Meta.ID
 		facts = append(facts, fact)
-		switch r.Meta.Level {
-		case LevelFail:
+		if r.Meta.Level == LevelFail {
 			anyFail = true
-		case LevelReview:
+		}
+		if r.Meta.Level == LevelReview {
 			anyReview = true
 		}
 	}
-	switch {
-	case anyFail:
-		return quest.Verdict{Outcome: quest.OutFail, Facts: facts}
-	case anyReview:
-		return quest.Verdict{Outcome: quest.OutReview, Facts: facts}
-	default:
-		return quest.Verdict{Outcome: quest.OutPass}
-	}
-}
-
-// Catalog returns the metas of the given rules — the auto-generated rulebook that
-// the cli `rules` command prints (every cheese this gate blocks, by ID and level).
-func Catalog(rules []Rule) []RuleMeta {
-	metas := make([]RuleMeta, 0, len(rules))
-	for _, r := range rules {
-		metas = append(metas, r.Meta)
-	}
-	return metas
+	return verdictFromLevels(anyFail, anyReview, facts)
 }

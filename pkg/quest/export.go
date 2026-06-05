@@ -1,10 +1,7 @@
-package quest
+//ff:func feature=quest type=helper control=iteration dimension=1 level=error
+//ff:what terminal·미방출 아이템을 sink로 방출하고 Emitted를 세팅한다. 증분, 1회 보장. 새로 방출한 건수 반환.
 
-// Sink receives terminal item records during export. Implementations choose the
-// format (JSONL, CSV, …); reins ships a JSONL file sink in package cli.
-type Sink interface {
-	Emit(it *Item) error
-}
+package quest
 
 // Export emits every terminal, not-yet-emitted item to the sink and sets Emitted,
 // so each item is exported at most once across runs (the export ratchet). It

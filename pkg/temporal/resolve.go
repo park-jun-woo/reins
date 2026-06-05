@@ -1,3 +1,6 @@
+//ff:func feature=temporal type=helper control=sequence
+//ff:what 명세를 그레고리력 ISO Result로 정규화한다(순수, now는 ref 주입). Relative=ref+OffsetDays, Absolute+Gregorian=Start(있으면 End까지) 검증 후 단일/기간, 비그레고리·파싱실패=Determined=false. 역법 변환은 v1 미지원(v2).
+
 package temporal
 
 import "time"
@@ -25,19 +28,19 @@ func Resolve(spec Spec, ref time.Time) Result {
 	if spec.Calendar != Gregorian {
 		return Result{Determined: false}
 	}
-	start, err := time.Parse(isoLayout, spec.Start)
-	if err != nil {
+	start, ok := parseGregorian(spec.Start)
+	if !ok {
 		return Result{Determined: false}
 	}
 	if spec.End == "" {
-		return Result{Value: start.Format(isoLayout), Determined: true}
+		return Result{Value: start, Determined: true}
 	}
-	end, err := time.Parse(isoLayout, spec.End)
-	if err != nil {
+	end, ok := parseGregorian(spec.End)
+	if !ok {
 		return Result{Determined: false}
 	}
 	return Result{
-		Value:      start.Format(isoLayout) + "/" + end.Format(isoLayout),
+		Value:      start + "/" + end,
 		IsInterval: true,
 		Determined: true,
 	}

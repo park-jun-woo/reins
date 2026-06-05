@@ -1,7 +1,7 @@
-package quest
+//ff:func feature=quest type=helper control=selection
+//ff:what verdict를 래칫에 적용한다. PASS/REVIEW/SKIPPED/BLOCKED는 잠금, FAIL은 Tries++(MaxTries면 DONE 잠금). now 주입(순수).
 
-// MaxTries: after this many failed attempts, a TODO item locks to DONE.
-const MaxTries = 3
+package quest
 
 // Apply transitions an item per a gate Verdict. It is a pure state mutation (now is
 // injected). PASS/REVIEW/SKIPPED/BLOCKED lock the item and stamp CollectedAt; FAIL
@@ -24,11 +24,4 @@ func Apply(it *Item, v Verdict, now string) {
 			lock(it, DONE, v, now)
 		}
 	}
-}
-
-func lock(it *Item, s State, v Verdict, now string) {
-	it.State = s
-	it.Verdict = string(v.Outcome)
-	it.Reason = v.Reason()
-	it.CollectedAt = now
 }

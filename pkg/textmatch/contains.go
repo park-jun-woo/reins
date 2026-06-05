@@ -1,3 +1,6 @@
+//ff:func feature=textmatch type=helper control=sequence
+//ff:what token이 source의 substring인지 판정(둘 다 Normalize 후). 정규화 후 빈/공백 토큰은 false — strings.Contains(src,"")의 자명-참 함정(빈-앵커 치즈 벡터) 차단. 순수 함수.
+
 package textmatch
 
 import "strings"
@@ -12,19 +15,4 @@ func Contains(source, token string) bool {
 		return false
 	}
 	return strings.Contains(Normalize(source), nt)
-}
-
-// MissingTokens returns the tokens that are not present in source (after
-// normalization). Source is normalized once. Empty/whitespace tokens count as
-// missing. Handy for a gate rule to build a Fact naming the first offender.
-func MissingTokens(source string, tokens []string) []string {
-	ns := Normalize(source)
-	var miss []string
-	for _, t := range tokens {
-		nt := Normalize(t)
-		if nt == "" || !strings.Contains(ns, nt) {
-			miss = append(miss, t)
-		}
-	}
-	return miss
 }

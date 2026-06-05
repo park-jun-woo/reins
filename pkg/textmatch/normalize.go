@@ -1,3 +1,6 @@
+//ff:func feature=textmatch type=helper control=sequence
+//ff:what 표면형 정규화. 유니코드 NFC 적용 후 공백 런을 단일 스페이스로 접고 양끝을 트림한다. 원천·토큰 양쪽에 동일 적용(매핑 추론 아님). NFC가 합성/분해형 분음부호를 통일해 false-negative를 막는다. 순수 함수.
+
 package textmatch
 
 import (
