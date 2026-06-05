@@ -17,6 +17,9 @@ import (
 // Persistent flags: --session (default "session.json") and --out (default
 // "<name>-results.jsonl"). Subcommands load the session, mutate it via the pure
 // quest core, and save.
+//
+// Consumer-specific subcommands supplied via opts.ExtraCommands are attached to
+// the root after the canonical ones.
 func NewQuestCmd(name string, def gate.Definition, opts Options) *cobra.Command {
 	defaultOut := opts.Out
 	if defaultOut == "" {
@@ -48,5 +51,8 @@ func NewQuestCmd(name string, def gate.Definition, opts Options) *cobra.Command 
 		newExportCmd(&sessionPath, &outPath, load),
 		newRulesCmd(def),
 	)
+	// Attach consumer-specific subcommands after the canonical ones. Nil or
+	// empty is a no-op, keeping existing callers unaffected.
+	root.AddCommand(opts.ExtraCommands...)
 	return root
 }

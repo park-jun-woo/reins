@@ -8,4 +8,10 @@ package quest
 type Session struct {
 	Version int     `json:"version"`
 	Items   []*Item `json:"items"`
+	// Meta is an optional free-form slot for consumer-specific runtime state
+	// (e.g. a crawler's user-agent, cursors, or per-host robots cache) that must
+	// survive the Save/Load round-trip alongside the work-list. Additive and
+	// backward-compatible: omitempty keeps it absent from older sessions, and a
+	// nil map round-trips cleanly.
+	Meta map[string]any `json:"meta,omitempty"`
 }
