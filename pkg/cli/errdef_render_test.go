@@ -9,7 +9,7 @@ import (
 	"github.com/park-jun-woo/reins/pkg/quest"
 )
 
-func (d errDef) Render(it *quest.Item) (string, error) {
+func (d errDef) Render(_ *quest.Session, it *quest.Item) (string, error) {
 	if d.renderErr {
 		return "", errors.New("render boom")
 	}

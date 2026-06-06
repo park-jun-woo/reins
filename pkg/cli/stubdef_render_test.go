@@ -5,4 +5,4 @@ package cli
 
 import "github.com/park-jun-woo/reins/pkg/quest"
 
-func (stubDef) Render(it *quest.Item) (string, error) { return "render:" + it.Key, nil }
+func (stubDef) Render(_ *quest.Session, it *quest.Item) (string, error) { return "render:" + it.Key, nil }

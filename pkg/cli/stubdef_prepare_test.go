@@ -10,7 +10,7 @@ import (
 	"github.com/park-jun-woo/reins/pkg/quest"
 )
 
-func (stubDef) Prepare(it *quest.Item, raw []byte) (gate.Context, *quest.Verdict, error) {
+func (stubDef) Prepare(_ *quest.Session, it *quest.Item, raw []byte) (gate.Context, *quest.Verdict, error) {
 	if strings.TrimSpace(string(raw)) == "skip" {
 		return gate.Context{}, &quest.Verdict{Outcome: quest.OutSkip}, nil
 	}

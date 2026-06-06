@@ -36,7 +36,7 @@ func NewQuestCmd(name string, def gate.Definition, opts Options) *cobra.Command 
 		Short:         name + " — a reins quest CLI",
 		Version:       opts.Version,
 		SilenceUsage:  true,
-		SilenceErrors: true,
+		SilenceErrors: false,
 	}
 	root.PersistentFlags().StringVar(&sessionPath, "session", "session.json", "session state file")
 	root.PersistentFlags().StringVar(&outPath, "out", defaultOut, "export output file (JSONL)")

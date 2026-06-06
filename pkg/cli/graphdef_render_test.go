@@ -5,4 +5,4 @@ package cli
 
 import "github.com/park-jun-woo/reins/pkg/quest"
 
-func (graphDef) Render(it *quest.Item) (string, error) { return "render:" + it.Key, nil }
+func (graphDef) Render(_ *quest.Session, it *quest.Item) (string, error) { return "render:" + it.Key, nil }

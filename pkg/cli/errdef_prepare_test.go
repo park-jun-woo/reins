@@ -10,7 +10,7 @@ import (
 	"github.com/park-jun-woo/reins/pkg/quest"
 )
 
-func (d errDef) Prepare(it *quest.Item, raw []byte) (gate.Context, *quest.Verdict, error) {
+func (d errDef) Prepare(_ *quest.Session, it *quest.Item, raw []byte) (gate.Context, *quest.Verdict, error) {
 	if d.prepareErr {
 		return gate.Context{}, nil, errors.New("prepare boom")
 	}

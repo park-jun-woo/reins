@@ -1,5 +1,5 @@
 //ff:func feature=cli type=command control=sequence level=error
-//ff:what `next` 명령(읽기·비변이). 다음 TODO 아이템 하나를 골라 def.Render로 작성 프롬프트·검증 컨텍스트를 출력한다. TODO가 없으면 그 사실만 알린다.
+//ff:what `next` 명령(읽기·비변이). 다음 TODO 아이템 하나를 골라 def.Render(s, it)로 작성 프롬프트·검증 컨텍스트를 출력한다(세션을 넘겨 Render가 Meta를 읽게 한다; Save 없음 → Render는 read-only). TODO가 없으면 그 사실만 알린다.
 
 package cli
 
@@ -25,7 +25,7 @@ func newNextCmd(def gate.Definition, load sessionLoader) *cobra.Command {
 				fmt.Fprintln(cmd.OutOrStdout(), "no TODO items remaining")
 				return nil
 			}
-			prompt, err := def.Render(it)
+			prompt, err := def.Render(s, it)
 			if err != nil {
 				return err
 			}

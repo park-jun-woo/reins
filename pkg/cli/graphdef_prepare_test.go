@@ -8,6 +8,6 @@ import (
 	"github.com/park-jun-woo/reins/pkg/quest"
 )
 
-func (graphDef) Prepare(it *quest.Item, raw []byte) (gate.Context, *quest.Verdict, error) {
+func (graphDef) Prepare(_ *quest.Session, it *quest.Item, raw []byte) (gate.Context, *quest.Verdict, error) {
 	return gate.Context{Item: it, Submission: string(raw)}, nil, nil
 }

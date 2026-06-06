@@ -1,5 +1,5 @@
 //ff:func feature=cli type=command control=sequence level=error
-//ff:what `submit --key <k> [--in <file>|-]` 명령. 세션 Find→TODO 확인→제출물 raw 로드→def.Prepare→(short verdict, def가 gate.Evaluator면 ev.Evaluate(그래프), 아니면 gate.Evaluate(Rules))→quest.Apply(UTC RFC3339)→Save→Export 후, 결과와 FAIL 시 Fact 피드백을 출력한다.
+//ff:what `submit --key <k> [--in <file>|-]` 명령. 세션 Find→TODO 확인→제출물 raw 로드→def.Prepare(s, it, raw)(세션을 넘겨 Prepare가 s.Meta를 읽고 갱신; 직후 Save로 영속)→(short verdict, def가 gate.Evaluator면 ev.Evaluate(그래프), 아니면 gate.Evaluate(Rules))→quest.Apply(UTC RFC3339)→Save→Export 후, 결과와 FAIL 시 Fact 피드백을 출력한다.
 
 package cli
 
@@ -41,7 +41,7 @@ func newSubmitCmd(def gate.Definition, sessionPath, outPath *string, load sessio
 			if err != nil {
 				return err
 			}
-			ctx, short, err := def.Prepare(it, raw)
+			ctx, short, err := def.Prepare(s, it, raw)
 			if err != nil {
 				return err
 			}
