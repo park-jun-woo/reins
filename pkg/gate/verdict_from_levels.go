@@ -8,12 +8,12 @@ import "github.com/park-jun-woo/reins/pkg/quest"
 // verdictFromLevels reduces the aggregated level flags to a Verdict: any Fail → FAIL
 // (with Facts), else any Review → REVIEW (with Facts), else PASS. Never a weight — a
 // single decisive violation is FAIL.
-func verdictFromLevels(anyFail, anyReview bool, facts []quest.Fact) quest.Verdict {
+func verdictFromLevels(anyFail, anyReview bool, facts []quest.Fact, rootCause string) quest.Verdict {
 	switch {
 	case anyFail:
-		return quest.Verdict{Outcome: quest.OutFail, Facts: facts}
+		return quest.Verdict{Outcome: quest.OutFail, Facts: facts, RootCause: rootCause}
 	case anyReview:
-		return quest.Verdict{Outcome: quest.OutReview, Facts: facts}
+		return quest.Verdict{Outcome: quest.OutReview, Facts: facts, RootCause: rootCause}
 	default:
 		return quest.Verdict{Outcome: quest.OutPass}
 	}

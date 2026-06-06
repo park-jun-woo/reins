@@ -7,10 +7,13 @@ required:
     ground: "network ground primitives (reins asset like textmatch/temporal) — HTTPBody(url)→body, MXResolves(domain)→deliverable; per-evaluation Snapshot resolves once on first read + caches (determinism, open decision #8); injectable Resolver (default real net stack, tests inject fake → network-free); resolve error surfaced for the caller to reduce to a FAIL Fact"
     temporal: "deterministic time-spec normalizer — converts an AI-identified structured time Spec (calendar/components/offset) to canonical Gregorian ISO (single/interval); undecidable → Determined=false"
     cli: "Cobra command scaffold — the how-make-quest canonical skeleton (scan/next/submit/status/export) plus the rules rulebook; does IO/parsing/output only, never judges state"
+    llm: "LLM 호출 어댑터 — ollama/xai/gemini chat completion; generate 단계(L0)만 담당, 판정/래칫과 무관(권위 비대칭); net/http+encoding/json만, API 키는 env 전용(yaml 폴백 없음)"
   type:
     command: "cobra command entrypoint"
     model: "data type definition"
     helper: "internal utility function"
+    adapter: "external service client — wraps one provider endpoint behind the Backend contract (http+json, env key)"
+    loader: "environment/config resolver — reads a value from env only, no file fallback"
 
 optional:
   level:

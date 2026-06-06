@@ -16,6 +16,7 @@ import "github.com/park-jun-woo/reins/pkg/quest"
 func Evaluate(rules []Rule, ctx Context) quest.Verdict {
 	var facts []quest.Fact
 	anyFail, anyReview := false, false
+	failID, reviewID := "", ""
 	for _, r := range rules {
 		fired, fact := r.Check(ctx)
 		if !fired {
@@ -26,9 +27,21 @@ func Evaluate(rules []Rule, ctx Context) quest.Verdict {
 		if r.Meta.Level == LevelFail {
 			anyFail = true
 		}
+		if r.Meta.Level == LevelFail && failID == "" {
+			failID = r.Meta.ID
+		}
 		if r.Meta.Level == LevelReview {
 			anyReview = true
 		}
+		if r.Meta.Level == LevelReview && reviewID == "" {
+			reviewID = r.Meta.ID
+		}
 	}
-	return verdictFromLevels(anyFail, anyReview, facts)
+	// RootCause = first fired Fail rule (or first Review rule when no Fail fired):
+	// the decisive rule that produced the verdict, independent of Facts ordering.
+	rootCause := failID
+	if rootCause == "" {
+		rootCause = reviewID
+	}
+	return verdictFromLevels(anyFail, anyReview, facts, rootCause)
 }

@@ -60,6 +60,11 @@ func (g *Graph) Evaluate(gctx gate.Context) quest.Verdict {
 	if v.Outcome != quest.OutPass {
 		events := g.collectSupersessionEvents(activeCounters)
 		v.Feedback = g.renderWalkthrough(string(v.Outcome), remaining, events)
+		// RootCause = the same decisive counter the walkthrough selects (its
+		// counterName = Fact.Rule). Structured exposure of an existing deterministic
+		// choice; no new judgment logic.
+		root, _ := g.selectRootCause(remaining)
+		v.RootCause = counterName(root)
 	}
 	return v
 }

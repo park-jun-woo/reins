@@ -25,7 +25,7 @@ func TestVerdictFromLevels(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			v := verdictFromLevels(c.anyFail, c.anyReview, facts)
+			v := verdictFromLevels(c.anyFail, c.anyReview, facts, "")
 			if v.Outcome != c.want {
 				t.Fatalf("outcome = %q, want %q", v.Outcome, c.want)
 			}

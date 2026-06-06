@@ -30,7 +30,8 @@ irreversible.
 | `pkg/ground` | Network ground primitives — `HTTPBody`·`MXResolves` (injectable, snapshot) | (pure net) |
 | `pkg/textmatch` | Body-containment verification — `Normalize`(NFC)·`Contains`·`MissingTokens`. Hallucination block | x/text |
 | `pkg/temporal` | Time normalization — structured `Spec` → Gregorian ISO | (pure) |
-| `pkg/cli` | Cobra scaffold — `NewQuestCmd` → scan/next/submit/status/export/rules | cobra |
+| `pkg/llm` | LLM call adapters — `Backend`(ollama/xai/gemini)·`CallFunc`·`FromFlag`·auto `num_ctx`. Generation (L0) only; never judges/locks | net/http |
+| `pkg/cli` | Cobra scaffold — `NewQuestCmd` → scan/next/submit/status/export/rules (+ opt-in `agent`) | cobra, llm |
 
 > **toulmin isolation**: only `pkg/graph`/`pkg/ground` are heavy. `pkg/gate`·`pkg/cli` do not import
 > toulmin, so a consumer that doesn't use the graph never links toulmin.
@@ -76,7 +77,7 @@ else PASS**. Deterministic (same `(rules, ctx)` → same `Verdict`).
 // quest
 type Item struct { Key string; State State; Tries int; Payload any; Log []Attempt; Emitted bool; … }
 type State string  // TODO PASS REVIEW DONE SKIPPED BLOCKED  (terminal = PASS/REVIEW/DONE/SKIPPED/BLOCKED)
-type Verdict struct { Outcome Outcome; Facts []Fact; Feedback string } // Outcome: PASS REVIEW FAIL SKIPPED BLOCKED
+type Verdict struct { Outcome Outcome; Facts []Fact; Feedback string; RootCause string } // Outcome: PASS REVIEW FAIL SKIPPED BLOCKED; RootCause = the rule that caused FAIL/REVIEW (agent coaching)
 type Fact struct { Rule, Where, Expected, Actual string }
 const MaxTries = 3  // FAIL accrued to MaxTries → lock to DONE
 
@@ -104,6 +105,49 @@ rules   the gate's rule catalog (auto rulebook — audit the cheese it blocks)
 
 `submit` takes `--key <k>` + `--in <file>|-` (raw bytes → `Prepare` decodes). Every submit auto-emits
 terminal items to `--out` (default `<name>-results.jsonl`). Tune via `Options{Out, Version}`.
+
+---
+
+## Unattended drive: the `agent` command (opt-in)
+
+The same `next`→`submit` an external agent runs by hand, closed **in-process** as a generate→gate→retry
+loop: an LLM generates each TODO's payload, the gate judges, FAIL feedback is fed back until PASS or
+`MaxTries`. Opt in with `Options{Agent: &AgentOptions{…}}` (nil ⇒ the command is not attached, fully
+backward-compatible).
+
+```go
+type AgentOptions struct {
+    DefaultModel string            // "" ⇒ "ollama:gemma4:e4b"
+    System       string            // global generation system prompt
+    RuleSystem   map[string]string // toulmin rule ID → extra system coaching when that rule was the FAIL root cause
+    LLM          llm.Backend       // injected backend (tests); when set, --model is ignored
+}
+```
+
+The loop (`agent [--model backend:model] [--max-items N]`):
+
+```
+for it := s.NextTODO(); it != nil; it = s.NextTODO() {
+    system := opts.System + RuleSystem[verdict.RootCause]   // global + last-FAIL rule coaching
+    raw    := backend.Complete(system, def.Render(s,it)+feedback)  // LLM generates (L0)
+    verdict := evaluateAndApply(...)                        // SAME path as submit: gate→Apply→export
+    if verdict.Outcome != quest.OutFail { break }           // PASS/REVIEW/SKIP/BLOCK → lock, next item
+    feedback = renderVerdictText(...)                       // identical to what submit prints
+}
+```
+
+- **Authority asymmetry holds** — the LLM is only the generator (L0). **Only the gate locks PASS.** The
+  loop calls `quest.Apply`; on the `MaxTries`-th FAIL it locks DONE → `NextTODO` drops it → the loop
+  terminates (monotone convergence). The framework exposes no API to grant the LLM PASS authority.
+- **`Verdict.RootCause`** (additive, backward-compatible field) names the rule that caused FAIL/REVIEW —
+  set deterministically on **both** paths: flat `gate.Evaluate` (first fired Fail rule's ID) and the
+  graph backend (`selectRootCause`'s top counter). `RuleSystem[RootCause]` turns it into rule-specific
+  coaching on retry.
+- **Feedback parity** — the FAIL text fed to the model is the very string `submit` prints
+  (`renderVerdict`/`renderVerdictText` shared), so human-visible and model-visible feedback never drift.
+- **Backends** (`pkg/llm`): `ollama:<model>` (local, no key, `num_ctx` auto-sized from prompt length),
+  `xai:<model>`/`gemini:<model>` (OpenAI-compat / Gemini, **env-only** API keys). `temperature: 0`.
+  Inject `llm.CallFunc` for network-free tests.
 
 ---
 
@@ -220,3 +264,4 @@ unify the output `value` in English.
 | Date/time normalization | `pkg/temporal` |
 | Short-circuit an untrusted submission | `Prepare`'s `short` verdict (`OutSkip`/`OutBlock`) |
 | A streaming source instead of a one-shot seed | the consumer adds a `run` command (not yet shipped by reins) |
+| Unattended drive (LLM generates, gate judges) | `Options{Agent}` + `pkg/llm` — the opt-in `agent` loop; rule-specific coaching via `RuleSystem`/`Verdict.RootCause` |

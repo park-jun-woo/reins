@@ -5,7 +5,6 @@ package cli
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/park-jun-woo/reins/pkg/gate"
 	"github.com/park-jun-woo/reins/pkg/quest"
@@ -41,31 +40,8 @@ func newSubmitCmd(def gate.Definition, sessionPath, outPath *string, load sessio
 			if err != nil {
 				return err
 			}
-			ctx, short, err := def.Prepare(s, it, raw)
+			verdict, err := evaluateAndApply(def, s, it, raw, *outPath, *sessionPath)
 			if err != nil {
-				return err
-			}
-			var verdict quest.Verdict
-			if short != nil {
-				verdict = *short
-			} else if ev, ok := def.(gate.Evaluator); ok {
-				verdict = ev.Evaluate(ctx)
-			} else {
-				verdict = gate.Evaluate(def.Rules(), ctx)
-			}
-			now := time.Now().UTC().Format(time.RFC3339)
-			quest.Apply(it, verdict, now)
-			if err := s.Save(*sessionPath); err != nil {
-				return err
-			}
-			sink, err := newJSONLSink(*outPath)
-			if err != nil {
-				return err
-			}
-			if _, err := quest.Export(s, sink); err != nil {
-				return err
-			}
-			if err := s.Save(*sessionPath); err != nil {
 				return err
 			}
 			printSubmit(cmd.OutOrStdout(), key, it, verdict)
