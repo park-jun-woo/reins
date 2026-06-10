@@ -1,0 +1,44 @@
+reins
+Copyright (c) 2026 Park Junwoo
+
+This product is licensed under the MIT License (see the LICENSE file).
+
+================================================================================
+Third-party software
+================================================================================
+
+This product depends on the following third-party modules. Their license texts
+are available in the respective upstream repositories and in the Go module
+cache of a source checkout.
+
+--------------------------------------------------------------------------------
+github.com/spf13/cobra
+Licensed under the Apache License, Version 2.0.
+Copyright 2013-2023 The Cobra Authors.
+
+--------------------------------------------------------------------------------
+github.com/spf13/pflag
+Licensed under the BSD 3-Clause License.
+Copyright (c) 2012 Alex Ogier. All rights reserved.
+Copyright (c) 2012 The Go Authors. All rights reserved.
+
+--------------------------------------------------------------------------------
+github.com/inconshreveable/mousetrap
+(included in Windows builds via cobra)
+Licensed under the Apache License, Version 2.0.
+Copyright 2022 Alan Shreve (@inconshreveable)
+
+--------------------------------------------------------------------------------
+golang.org/x/text
+Licensed under the BSD 3-Clause License, with an additional IP rights grant
+(see the upstream PATENTS file).
+Copyright (c) 2009 The Go Authors. All rights reserved.
+
+--------------------------------------------------------------------------------
+github.com/park-jun-woo/toulmin
+Copyright (c) 2026 Park Junwoo (same author as this product).
+
+================================================================================
+
+No third-party source code is copied or vendored into this repository; the
+modules above are consumed as ordinary Go module dependencies.
