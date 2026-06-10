@@ -1,5 +1,5 @@
 //ff:func feature=llm type=adapter control=sequence level=error
-//ff:what doOllamaRequest — body를 JSON 직렬화해 POST하고, 파싱한 message.content를 반환한다. 상태코드 비-200·마샬/언마샬/IO 오류를 명확한 에러로 표면화. Ollama.Complete의 전송·파싱 단계.
+//ff:what doOllamaRequest — body를 JSON 직렬화해 공용 llmClient(300s 타임아웃)로 POST하고, 파싱한 message.content를 반환한다. 상태코드 비-200·마샬/언마샬/IO 오류를 명확한 에러로 표면화. Ollama.Complete의 전송·파싱 단계.
 
 package llm
 
@@ -11,13 +11,14 @@ import (
 	"net/http"
 )
 
-// doOllamaRequest marshals body, POSTs it, and returns the parsed message.content.
+// doOllamaRequest marshals body, POSTs it via the shared timeout-bounded
+// llmClient, and returns the parsed message.content.
 func doOllamaRequest(url string, body any) (string, error) {
 	payload, err := json.Marshal(body)
 	if err != nil {
 		return "", fmt.Errorf("marshal ollama request: %w", err)
 	}
-	resp, err := http.Post(url, "application/json", bytes.NewReader(payload))
+	resp, err := llmClient.Post(url, "application/json", bytes.NewReader(payload))
 	if err != nil {
 		return "", fmt.Errorf("ollama request: %w", err)
 	}

@@ -7,6 +7,7 @@ CLAUDE.md
 plans/
 .clari/
 .claude/
+files/
 
 # go workspace (로컬 전용 — ../toulmin·./comail 미발행 모듈을 잇는 개발 편의. go.mod replace가 SSOT)
 go.work
@@ -14,3 +15,6 @@ go.work.sum
 
 # tsma 런타임 세션 상태
 .tsma/
+
+# whyso 로컬 맵 캐시
+.whyso/

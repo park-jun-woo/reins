@@ -1,5 +1,5 @@
 //ff:func feature=cli type=command control=sequence level=error
-//ff:what `scan [args...]` 명령. def.Seed로 입력에서 N개 퀘스트 아이템을 시드해 세션에 추가하고 저장한다(scan은 입력에서 작업을 시드하는 본질).
+//ff:what `scan [args...]` 명령. def.Seed로 입력에서 퀘스트 아이템을 시드하되 세션에 이미 있는 Key는 skip(dedupe — 중복 scan이 아이템을 복제해 래칫 무결성을 깨지 않게)하고 저장한다. 같은 입력 재scan은 신규분만 추가. skip이 있으면 "(skipped M duplicate(s))"를 병기.
 
 package cli
 
@@ -10,7 +10,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// newScanCmd seeds new TODO items from args and saves the session.
+// newScanCmd seeds new TODO items from args and saves the session. Seeded items
+// whose Key already exists in the session are skipped (dedupe), so re-scanning the
+// same input only adds the new ones and never duplicates the ratchet.
 func newScanCmd(def gate.Definition, sessionPath *string, load sessionLoader) *cobra.Command {
 	return &cobra.Command{
 		Use:   "scan [args...]",
@@ -24,11 +26,28 @@ func newScanCmd(def gate.Definition, sessionPath *string, load sessionLoader) *c
 			if err != nil {
 				return err
 			}
-			s.Items = append(s.Items, items...)
+			existing := make(map[string]bool, len(s.Items))
+			for _, it := range s.Items {
+				existing[it.Key] = true
+			}
+			added, skipped := 0, 0
+			for _, it := range items {
+				if existing[it.Key] {
+					skipped++
+					continue
+				}
+				existing[it.Key] = true
+				s.Items = append(s.Items, it)
+				added++
+			}
 			if err := s.Save(*sessionPath); err != nil {
 				return err
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "seeded %d item(s); %d total\n", len(items), len(s.Items))
+			if skipped > 0 {
+				fmt.Fprintf(cmd.OutOrStdout(), "seeded %d item(s) (skipped %d duplicate(s)); %d total\n", added, skipped, len(s.Items))
+			} else {
+				fmt.Fprintf(cmd.OutOrStdout(), "seeded %d item(s); %d total\n", added, len(s.Items))
+			}
 			return nil
 		},
 	}

@@ -45,8 +45,8 @@ Implement the four `gate.Definition` methods and reins supplies the rest:
 ```go
 type Definition interface {
     Seed(args []string) ([]*quest.Item, error)            // input → initial TODOs
-    Render(it *quest.Item) (string, error)                // the authoring prompt `next` shows
-    Prepare(it *quest.Item, raw []byte) (gate.Context, *quest.Verdict, error) // decode a submission (short-circuit if non-nil)
+    Render(s *quest.Session, it *quest.Item) (string, error)                // the authoring prompt `next` shows (read-only s.Meta)
+    Prepare(s *quest.Session, it *quest.Item, raw []byte) (gate.Context, *quest.Verdict, error) // decode a submission (short-circuit if non-nil; may update s.Meta)
     Rules() []gate.Rule                                   // the gate's violation-rule catalog
 }
 
@@ -75,7 +75,8 @@ else PASS**. Deterministic (same `(rules, ctx)` → same `Verdict`).
 
 ```go
 // quest
-type Item struct { Key string; State State; Tries int; Payload any; Log []Attempt; Emitted bool; … }
+type Item struct { Key string; State State; Tries int; Payload json.RawMessage; Log []Attempt; Emitted bool; … }
+// Payload is raw JSON — write/read it via it.SetPayload(v) / it.DecodePayload(&v), never the field directly.
 type State string  // TODO PASS REVIEW DONE SKIPPED BLOCKED  (terminal = PASS/REVIEW/DONE/SKIPPED/BLOCKED)
 type Verdict struct { Outcome Outcome; Facts []Fact; Feedback string; RootCause string } // Outcome: PASS REVIEW FAIL SKIPPED BLOCKED; RootCause = the rule that caused FAIL/REVIEW (agent coaching)
 type Fact struct { Rule, Where, Expected, Actual string }
@@ -233,7 +234,7 @@ textmatch.Normalize(s)                // NFC + whitespace fold + Trim (no case-f
 textmatch.Contains(source, token)     // substring after normalization
 textmatch.MissingTokens(source, toks) // tokens absent from source (hallucination block)
 
-temporal.Resolve(spec)                // structured Spec (calendar/components/offset) → Gregorian ISO (undetermined ⇒ Determined=false)
+temporal.Resolve(spec, ref)           // structured Spec (calendar/components/offset) + ref time.Time (injected now) → Gregorian ISO (undetermined ⇒ Determined=false)
 temporal.ComponentsInAnchor(...)      // extract time components from an anchor string
 ```
 

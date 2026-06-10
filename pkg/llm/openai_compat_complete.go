@@ -1,5 +1,5 @@
 //ff:func feature=llm type=adapter control=sequence level=error
-//ff:what OpenAICompat.Complete — OpenAI 호환 chat completions endpoint(xai 등) 호출. URL·Backend(키 조회용 이름)·Model을 갖고 Authorization: Bearer <env key>로 POST. temperature 0 고정, max_tokens 2048. choices[0].message.content 반환.
+//ff:what OpenAICompat.Complete — OpenAI 호환 chat completions endpoint(xai 등) 호출. URL·Backend(키 조회용 이름)·Model을 갖고 Authorization: Bearer <env key>로 공용 llmClient(300s 타임아웃) POST. temperature 0 고정, max_tokens 2048. choices[0].message.content 반환.
 
 package llm
 
@@ -37,7 +37,7 @@ func (o OpenAICompat) Complete(system, user string) (string, error) {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+apiKey)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := llmClient.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("%s request: %w", o.Backend, err)
 	}

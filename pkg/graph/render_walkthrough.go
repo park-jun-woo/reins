@@ -1,5 +1,5 @@
 //ff:func feature=graph type=helper control=iteration dimension=2
-//ff:what renderWalkthrough — 평가 중 수집한 잔존 카운터·superseded 이벤트로 에이전트 직통 "공략집"을 만든다. ①결정타(잔존 활성 최상류 Fail)와 그 결정론 Fact, ②다른 잔존 Fail은 "+곁가지(잔존)"로 병기, ③superseded된 활성 카운터는 "X에 의해 superseded → 곁가지" 한 줄(완전 숨김 아님), ④"판정을 뒤집으려면 <결정타>를 끄라" 다음 행동. 잎은 전부 규칙이 낸 quest.Fact. remaining 없으면(PASS) 빈 문자열.
+//ff:what renderWalkthrough — 평가 중 수집한 잔존 카운터·superseded 이벤트로 에이전트 직통 "공략집"을 만든다. ①결정타(잔존 활성 최상류 Fail)와 그 결정론 Fact, ②결정타 외 잔존 카운터 전부(곁가지 Fail은 물론 FAIL root와 함께 잔존한 REVIEW도 — Facts와의 피드백 패리티)를 "+곁가지(잔존)"로 병기, ③superseded된 활성 카운터는 "X에 의해 superseded → 곁가지" 한 줄(완전 숨김 아님), ④"판정을 뒤집으려면 <결정타>를 끄라" 다음 행동. 잎은 전부 규칙이 낸 quest.Fact. remaining 없으면(PASS) 빈 문자열.
 
 package graph
 
@@ -13,7 +13,9 @@ import (
 // renderWalkthrough builds the agent-facing strategy text ("walkthrough") from the
 // remaining counters and the superseded events gathered during evaluation:
 // (1) the root cause (the uppermost remaining active Fail) with its deterministic
-// Fact, (2) any other remaining Fail listed as a remaining side-branch, (3) each
+// Fact, (2) every other remaining counter — sibling Fails and any REVIEW counter
+// surviving next to a FAIL root (feedback parity with Facts) — listed as a
+// remaining side-branch, (3) each
 // superseded active counter as a one-line "superseded by X → side-branch" (not fully
 // hidden), and (4) a "to flip the verdict, clear <root cause>" next action. Every
 // leaf is a rule-emitted quest.Fact. Returns "" when nothing remains (PASS).

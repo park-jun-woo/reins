@@ -1,5 +1,5 @@
 //ff:func feature=cli type=helper control=sequence level=error
-//ff:what evaluateAndApply — submit·agent 공용 헬퍼. def.Prepare(s,it,raw)→(short verdict, def가 gate.Evaluator면 ev.Evaluate(그래프), 아니면 gate.Evaluate(Rules))→quest.Apply(UTC RFC3339)→Save→quest.Export→Save 후 verdict 반환. 게이트가 PASS를 잠그는 단일 지점. submit과 agent가 같은 판정·래칫·export 경로를 공유한다(DRY).
+//ff:what evaluateAndApply — submit·agent 공용 헬퍼. def.Prepare(s,it,raw)→(short verdict, def가 gate.Evaluator면 ev.Evaluate(그래프), 아니면 gate.Evaluate(Rules))→quest.Apply(UTC RFC3339)→Save→exportAndSave(Export 실패여도 Save로 Emitted 래칫 보존) 후 verdict 반환. 게이트가 PASS를 잠그는 단일 지점. submit과 agent가 같은 판정·래칫·export 경로를 공유한다(DRY).
 
 package cli
 
@@ -35,10 +35,7 @@ func evaluateAndApply(def gate.Definition, s *quest.Session, it *quest.Item, raw
 	if err != nil {
 		return verdict, err
 	}
-	if _, err := quest.Export(s, sink); err != nil {
-		return verdict, err
-	}
-	if err := s.Save(sessionPath); err != nil {
+	if _, err := exportAndSave(s, sink, sessionPath); err != nil {
 		return verdict, err
 	}
 	return verdict, nil
