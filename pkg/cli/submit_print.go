@@ -1,5 +1,5 @@
 //ff:func feature=cli type=helper control=iteration dimension=1
-//ff:what renderVerdict — submit·agent 공용 verdict 렌더링. "key -> OUTCOME (state STATE)" 한 줄에 더해 Verdict.Feedback(graph 공략집)이 있으면 그대로, 없으면 후방호환 Facts 루프(규칙·위치·기대·실제)를 쓴다. cli는 graph/toulmin을 import하지 않고 문자열만 출력한다.
+//ff:what renderVerdict — submit·loop 공용 verdict 렌더링. "key -> OUTCOME (state STATE)" 한 줄에 더해 Verdict.Feedback(graph 공략집)이 있으면 그대로, 없으면 후방호환 Facts 루프(규칙·위치·기대·실제)를 쓴다. cli는 graph/toulmin을 import하지 않고 문자열만 출력한다.
 
 package cli
 

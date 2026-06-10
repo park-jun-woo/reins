@@ -51,10 +51,10 @@ func NewQuestCmd(name string, def gate.Definition, opts Options) *cobra.Command 
 		newExportCmd(&sessionPath, &outPath, load),
 		newRulesCmd(def),
 	)
-	// Attach the agent loop only when opted in (opts.Agent != nil), before the
-	// consumer-specific ExtraCommands. nil ⇒ no agent command (backward-compatible).
-	if opts.Agent != nil {
-		root.AddCommand(newAgentCmd(def, opts.Agent, &sessionPath, &outPath, load))
+	// Attach the loop command only when opted in (opts.Loop != nil), before the
+	// consumer-specific ExtraCommands. nil ⇒ no loop command (backward-compatible).
+	if opts.Loop != nil {
+		root.AddCommand(newLoopCmd(def, opts.Loop, &sessionPath, &outPath, load))
 	}
 	// Attach consumer-specific subcommands after the canonical ones. Nil or
 	// empty is a no-op, keeping existing callers unaffected.

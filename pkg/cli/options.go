@@ -1,5 +1,5 @@
 //ff:type feature=cli type=model
-//ff:what NewQuestCmd 튜닝 옵션. Out(기본 export 경로, 비면 "<name>-results.jsonl")·Version(루트 버전 문자열)·ExtraCommands(루트에 부착할 소비자 서브명령)·Agent(generate→gate→retry 루프 옵트인). 모두 선택.
+//ff:what NewQuestCmd 튜닝 옵션. Out(기본 export 경로, 비면 "<name>-results.jsonl")·Version(루트 버전 문자열)·ExtraCommands(루트에 부착할 소비자 서브명령)·Loop(generate→gate→retry 루프 옵트인). 모두 선택.
 
 package cli
 
@@ -18,7 +18,7 @@ type Options struct {
 	// command after the canonical reins subcommands (e.g. ccnews "run" or
 	// comail "export"). Nil or empty has no effect, so it is backward-compatible.
 	ExtraCommands []*cobra.Command
-	// Agent, when non-nil, opts the quest into the `agent` generate→gate→retry
-	// loop. Nil ⇒ no agent command is attached (fully backward-compatible).
-	Agent *AgentOptions
+	// Loop, when non-nil, opts the quest into the `loop` generate→gate→retry
+	// loop. Nil ⇒ no loop command is attached.
+	Loop *LoopOptions
 }

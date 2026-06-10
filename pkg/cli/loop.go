@@ -1,5 +1,5 @@
 //ff:func feature=cli type=command control=sequence level=error
-//ff:what `agent [--model ...] [--max-items N]` 명령. submit의 자동 반복 — 남은 TODO를 NextTODO로 순회하며 LLM 생성(L0)→evaluateAndApply(게이트 판정·래칫·export, submit과 동일 경로)→FAIL이면 renderVerdictText 피드백을 user에, RuleSystem[verdict.RootCause] 코칭을 system에 되먹여 재시도(it.Tries<MaxTries). PASS/REVIEW/SKIP/BLOCK은 잠금→다음 아이템. backend는 opts.LLM!=nil이면 그걸, 아니면 --model을 llm.FromFlag로 lazy 생성. 종료 보장: MaxTries 초과 시 Apply가 DONE으로 잠가 NextTODO에서 빠짐(단조 수렴). PASS 잠금 권한은 게이트에만. defer Save 실패는 stderr 경고로 표면화(에러 침묵 금지).
+//ff:what `loop [--model ...] [--max-items N]` 명령. submit의 자동 반복 — 남은 TODO를 NextTODO로 순회하며 LLM 생성(L0)→evaluateAndApply(게이트 판정·래칫·export, submit과 동일 경로)→FAIL이면 renderVerdictText 피드백을 user에, RuleSystem[verdict.RootCause] 코칭을 system에 되먹여 재시도(it.Tries<MaxTries). PASS/REVIEW/SKIP/BLOCK은 잠금→다음 아이템. backend는 opts.LLM!=nil이면 그걸, 아니면 --model을 llm.FromFlag로 lazy 생성. 종료 보장: MaxTries 초과 시 Apply가 DONE으로 잠가 NextTODO에서 빠짐(단조 수렴). PASS 잠금 권한은 게이트에만. defer Save 실패는 stderr 경고로 표면화(에러 침묵 금지).
 
 package cli
 
@@ -12,24 +12,24 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// defaultAgentModel is the --model fallback when neither opts.DefaultModel nor the
+// defaultLoopModel is the --model fallback when neither opts.DefaultModel nor the
 // flag is set.
-const defaultAgentModel = "ollama:gemma4:e4b"
+const defaultLoopModel = "ollama:gemma4:e4b"
 
-// newAgentCmd builds the `agent` command: an automatic submit loop that lets the LLM
+// newLoopCmd builds the `loop` command: an automatic submit loop that lets the LLM
 // generate each remaining TODO's payload, runs it through the same gate path as
 // submit, and feeds FAIL feedback (plus rule-specific system coaching) back on retry.
-func newAgentCmd(def gate.Definition, opts *AgentOptions, sessionPath, outPath *string, load sessionLoader) *cobra.Command {
+func newLoopCmd(def gate.Definition, opts *LoopOptions, sessionPath, outPath *string, load sessionLoader) *cobra.Command {
 	defaultModel := opts.DefaultModel
 	if defaultModel == "" {
-		defaultModel = defaultAgentModel
+		defaultModel = defaultLoopModel
 	}
 	var (
 		model    string
 		maxItems int
 	)
 	cmd := &cobra.Command{
-		Use:   "agent [--model backend:model] [--max-items N]",
+		Use:   "loop [--model backend:model] [--max-items N]",
 		Short: "auto-run the generate→gate→retry loop over remaining TODO items",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			backend := opts.LLM
@@ -45,14 +45,14 @@ func newAgentCmd(def gate.Definition, opts *AgentOptions, sessionPath, outPath *
 				return err
 			}
 			// Signal Definition.Render to suppress its own last-failure log-tail
-			// while the agent runs (the agent appends renderVerdict feedback itself,
+			// while the loop runs (the loop appends renderVerdict feedback itself,
 			// avoiding double exposure). Cleared after the loop so a later manual
 			// next/submit shows the tail again.
-			s.SetMeta(quest.MetaAgentLoop, true)
+			s.SetMeta(quest.MetaLoop, true)
 			defer func() {
-				delete(s.Meta, quest.MetaAgentLoop)
+				delete(s.Meta, quest.MetaLoop)
 				if err := s.Save(*sessionPath); err != nil {
-					fmt.Fprintf(cmd.ErrOrStderr(), "warning: save session after agent loop: %v\n", err)
+					fmt.Fprintf(cmd.ErrOrStderr(), "warning: save session after loop: %v\n", err)
 				}
 			}()
 			out := cmd.OutOrStdout()
@@ -61,12 +61,12 @@ func newAgentCmd(def gate.Definition, opts *AgentOptions, sessionPath, outPath *
 				if maxItems > 0 && done >= maxItems {
 					break
 				}
-				if err := runAgentItem(def, opts, backend, s, it, *outPath, *sessionPath, out); err != nil {
+				if err := runLoopItem(def, opts, backend, s, it, *outPath, *sessionPath, out); err != nil {
 					return err
 				}
 				done++
 			}
-			fmt.Fprintf(out, "agent: processed %d item(s)\n", done)
+			fmt.Fprintf(out, "loop: processed %d item(s)\n", done)
 			return nil
 		},
 	}

@@ -31,7 +31,7 @@ irreversible.
 | `pkg/textmatch` | Body-containment verification — `Normalize`(NFC)·`Contains`·`MissingTokens`. Hallucination block | x/text |
 | `pkg/temporal` | Time normalization — structured `Spec` → Gregorian ISO | (pure) |
 | `pkg/llm` | LLM call adapters — `Backend`(ollama/xai/gemini)·`CallFunc`·`FromFlag`·auto `num_ctx`. Generation (L0) only; never judges/locks | net/http |
-| `pkg/cli` | Cobra scaffold — `NewQuestCmd` → scan/next/submit/status/export/rules (+ opt-in `agent`) | cobra, llm |
+| `pkg/cli` | Cobra scaffold — `NewQuestCmd` → scan/next/submit/status/export/rules (+ opt-in `loop`) | cobra, llm |
 
 > **toulmin isolation**: only `pkg/graph`/`pkg/ground` are heavy. `pkg/gate`·`pkg/cli` do not import
 > toulmin, so a consumer that doesn't use the graph never links toulmin.
@@ -109,15 +109,15 @@ terminal items to `--out` (default `<name>-results.jsonl`). Tune via `Options{Ou
 
 ---
 
-## Unattended drive: the `agent` command (opt-in)
+## Unattended drive: the `loop` command (opt-in)
 
 The same `next`→`submit` an external agent runs by hand, closed **in-process** as a generate→gate→retry
 loop: an LLM generates each TODO's payload, the gate judges, FAIL feedback is fed back until PASS or
-`MaxTries`. Opt in with `Options{Agent: &AgentOptions{…}}` (nil ⇒ the command is not attached, fully
+`MaxTries`. Opt in with `Options{Loop: &LoopOptions{…}}` (nil ⇒ the command is not attached, fully
 backward-compatible).
 
 ```go
-type AgentOptions struct {
+type LoopOptions struct {
     DefaultModel string            // "" ⇒ "ollama:gemma4:e4b"
     System       string            // global generation system prompt
     RuleSystem   map[string]string // toulmin rule ID → extra system coaching when that rule was the FAIL root cause
@@ -125,7 +125,7 @@ type AgentOptions struct {
 }
 ```
 
-The loop (`agent [--model backend:model] [--max-items N]`):
+The loop (`loop [--model backend:model] [--max-items N]`):
 
 ```
 for it := s.NextTODO(); it != nil; it = s.NextTODO() {
@@ -265,4 +265,4 @@ unify the output `value` in English.
 | Date/time normalization | `pkg/temporal` |
 | Short-circuit an untrusted submission | `Prepare`'s `short` verdict (`OutSkip`/`OutBlock`) |
 | A streaming source instead of a one-shot seed | the consumer adds a `run` command (not yet shipped by reins) |
-| Unattended drive (LLM generates, gate judges) | `Options{Agent}` + `pkg/llm` — the opt-in `agent` loop; rule-specific coaching via `RuleSystem`/`Verdict.RootCause` |
+| Unattended drive (LLM generates, gate judges) | `Options{Loop}` + `pkg/llm` — the opt-in `loop` command; rule-specific coaching via `RuleSystem`/`Verdict.RootCause` |

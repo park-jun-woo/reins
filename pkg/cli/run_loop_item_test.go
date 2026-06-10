@@ -1,5 +1,5 @@
 //ff:func feature=cli type=command control=sequence level=error
-//ff:what TestRunAgentItem — runAgentItem 직접 호출 검증. 통과 페이로드는 1회로 PASS 잠금, "bad"→"good" 시퀀스는 FAIL 피드백을 되먹여 재시도 후 PASS로 수렴(게이트만 잠금).
+//ff:what TestRunLoopItem — runLoopItem 직접 호출 검증. 통과 페이로드는 1회로 PASS 잠금, "bad"→"good" 시퀀스는 FAIL 피드백을 되먹여 재시도 후 PASS로 수렴(게이트만 잠금).
 
 package cli
 
@@ -11,10 +11,10 @@ import (
 	"github.com/park-jun-woo/reins/pkg/quest"
 )
 
-// TestRunAgentItem drives the per-item generate→gate→retry loop directly: a passing
+// TestRunLoopItem drives the per-item generate→gate→retry loop directly: a passing
 // payload locks PASS in one shot, while a "bad"→"good" backend converges to PASS on
 // retry (only the gate locks PASS).
-func TestRunAgentItem(t *testing.T) {
+func TestRunLoopItem(t *testing.T) {
 	run := func(t *testing.T, replies []string) (*quest.Item, int) {
 		t.Helper()
 		dir := t.TempDir()
@@ -28,10 +28,10 @@ func TestRunAgentItem(t *testing.T) {
 			calls++
 			return r, nil
 		})
-		err := runAgentItem(stubDef{}, &AgentOptions{}, backend, s, it,
+		err := runLoopItem(stubDef{}, &LoopOptions{}, backend, s, it,
 			dir+"/out.jsonl", dir+"/session.json", io.Discard)
 		if err != nil {
-			t.Fatalf("runAgentItem: %v", err)
+			t.Fatalf("runLoopItem: %v", err)
 		}
 		return it, calls
 	}
@@ -62,7 +62,7 @@ func TestRunAgentItem(t *testing.T) {
 		it := &quest.Item{Key: "a", State: quest.TODO}
 		s.Items = append(s.Items, it)
 		backend := llm.CallFunc(func(system, user string) (string, error) { return "", errBackend })
-		err := runAgentItem(stubDef{}, &AgentOptions{}, backend, s, it,
+		err := runLoopItem(stubDef{}, &LoopOptions{}, backend, s, it,
 			dir+"/out.jsonl", dir+"/session.json", io.Discard)
 		if err != errBackend {
 			t.Fatalf("err = %v, want errBackend", err)
@@ -75,7 +75,7 @@ func TestRunAgentItem(t *testing.T) {
 		it := &quest.Item{Key: "a", State: quest.TODO}
 		s.Items = append(s.Items, it)
 		backend := llm.CallFunc(func(system, user string) (string, error) { return "good", nil })
-		err := runAgentItem(errDef{renderErr: true}, &AgentOptions{}, backend, s, it,
+		err := runLoopItem(errDef{renderErr: true}, &LoopOptions{}, backend, s, it,
 			dir+"/out.jsonl", dir+"/session.json", io.Discard)
 		if err == nil {
 			t.Fatalf("err = nil, want render error")
@@ -88,7 +88,7 @@ func TestRunAgentItem(t *testing.T) {
 		it := &quest.Item{Key: "a", State: quest.TODO}
 		s.Items = append(s.Items, it)
 		backend := llm.CallFunc(func(system, user string) (string, error) { return "good", nil })
-		err := runAgentItem(errDef{prepareErr: true}, &AgentOptions{}, backend, s, it,
+		err := runLoopItem(errDef{prepareErr: true}, &LoopOptions{}, backend, s, it,
 			dir+"/out.jsonl", dir+"/session.json", io.Discard)
 		if err == nil {
 			t.Fatalf("err = nil, want evaluateAndApply (prepare) error")

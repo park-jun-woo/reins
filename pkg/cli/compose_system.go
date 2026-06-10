@@ -3,7 +3,7 @@
 
 package cli
 
-// fallbackSystem is the generic system prompt used when AgentOptions.System is empty.
+// fallbackSystem is the generic system prompt used when LoopOptions.System is empty.
 const fallbackSystem = "You produce a submission a deterministic gate will judge. " +
 	"Output only the payload in the exact format the prompt specifies; no prose."
 

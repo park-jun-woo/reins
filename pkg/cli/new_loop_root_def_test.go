@@ -1,5 +1,5 @@
 //ff:func feature=cli type=helper control=sequence level=error
-//ff:what 테스트 헬퍼. 명시 Definition으로 agent를 옵트인한 stub 퀘스트 CLI를 만들어 session/out·args로 1회 실행하고 합쳐진 출력을 돌려준다.
+//ff:what 테스트 헬퍼. 명시 Definition으로 loop를 옵트인한 stub 퀘스트 CLI를 만들어 session/out·args로 1회 실행하고 합쳐진 출력을 돌려준다.
 
 package cli
 
@@ -10,9 +10,9 @@ import (
 	"github.com/park-jun-woo/reins/pkg/gate"
 )
 
-// newAgentRootDef builds a quest CLI (explicit Definition) with the agent opted in
+// newLoopRootDef builds a quest CLI (explicit Definition) with the loop opted in
 // and runs one command, returning combined output.
-func newAgentRootDef(t *testing.T, def gate.Definition, opts Options, session, out string, args ...string) (string, error) {
+func newLoopRootDef(t *testing.T, def gate.Definition, opts Options, session, out string, args ...string) (string, error) {
 	t.Helper()
 	cmd := NewQuestCmd("stub", def, opts)
 	var buf bytes.Buffer

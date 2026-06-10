@@ -1,5 +1,5 @@
 //ff:func feature=cli type=command control=sequence level=error
-//ff:what TestAgentRetryConverges — 첫 시도 FAIL 후 재시도 PASS로 루프가 수렴하는지(backend 2회 호출, FAIL·PASS 출력) 검증.
+//ff:what TestLoopRetryConverges — 첫 시도 FAIL 후 재시도 PASS로 루프가 수렴하는지(backend 2회 호출, FAIL·PASS 출력) 검증.
 
 package cli
 
@@ -10,8 +10,8 @@ import (
 	"github.com/park-jun-woo/reins/pkg/llm"
 )
 
-// TestAgentRetryConverges: FAIL then PASS — the loop retries and converges.
-func TestAgentRetryConverges(t *testing.T) {
+// TestLoopRetryConverges: FAIL then PASS — the loop retries and converges.
+func TestLoopRetryConverges(t *testing.T) {
 	dir := t.TempDir()
 	session := dir + "/session.json"
 	out := dir + "/out.jsonl"
@@ -24,19 +24,19 @@ func TestAgentRetryConverges(t *testing.T) {
 		}
 		return "good", nil // retry passes
 	})
-	opts := Options{Agent: &AgentOptions{LLM: backend}}
+	opts := Options{Loop: &LoopOptions{LLM: backend}}
 
-	if _, err := newAgentRoot(t, opts, session, out, "scan", "a"); err != nil {
+	if _, err := newLoopRoot(t, opts, session, out, "scan", "a"); err != nil {
 		t.Fatalf("scan: %v", err)
 	}
-	got, err := newAgentRoot(t, opts, session, out, "agent")
+	got, err := newLoopRoot(t, opts, session, out, "loop")
 	if err != nil {
-		t.Fatalf("agent: %v", err)
+		t.Fatalf("loop: %v", err)
 	}
 	if calls != 2 {
 		t.Fatalf("backend called %d times, want 2 (FAIL then PASS)", calls)
 	}
 	if !strings.Contains(got, "a -> FAIL") || !strings.Contains(got, "a -> PASS") {
-		t.Fatalf("agent output = %q, want a FAIL then a PASS", got)
+		t.Fatalf("loop output = %q, want a FAIL then a PASS", got)
 	}
 }

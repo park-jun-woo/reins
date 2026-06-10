@@ -1,5 +1,5 @@
 //ff:func feature=cli type=command control=sequence level=error
-//ff:what TestAgentRuleCoaching — FAIL 시 RootCause로 매핑된 RuleSystem 코칭이 다음 시도의 system 프롬프트에 합성되는지(첫 system엔 없고 재시도 system엔 있음) 검증.
+//ff:what TestLoopRuleCoaching — FAIL 시 RootCause로 매핑된 RuleSystem 코칭이 다음 시도의 system 프롬프트에 합성되는지(첫 system엔 없고 재시도 system엔 있음) 검증.
 
 package cli
 
@@ -10,9 +10,9 @@ import (
 	"github.com/park-jun-woo/reins/pkg/llm"
 )
 
-// TestAgentRuleCoaching: on FAIL the RootCause-mapped RuleSystem coaching is
+// TestLoopRuleCoaching: on FAIL the RootCause-mapped RuleSystem coaching is
 // composed into the next attempt's system prompt.
-func TestAgentRuleCoaching(t *testing.T) {
+func TestLoopRuleCoaching(t *testing.T) {
 	dir := t.TempDir()
 	session := dir + "/session.json"
 	out := dir + "/out.jsonl"
@@ -29,16 +29,16 @@ func TestAgentRuleCoaching(t *testing.T) {
 		return "good", nil
 	})
 	// stubDef's FAIL rule has ID "not-bad" — gate.Evaluate sets RootCause to it.
-	opts := Options{Agent: &AgentOptions{
+	opts := Options{Loop: &LoopOptions{
 		LLM:        backend,
 		RuleSystem: map[string]string{"not-bad": coach},
 	}}
 
-	if _, err := newAgentRoot(t, opts, session, out, "scan", "a"); err != nil {
+	if _, err := newLoopRoot(t, opts, session, out, "scan", "a"); err != nil {
 		t.Fatalf("scan: %v", err)
 	}
-	if _, err := newAgentRoot(t, opts, session, out, "agent"); err != nil {
-		t.Fatalf("agent: %v", err)
+	if _, err := newLoopRoot(t, opts, session, out, "loop"); err != nil {
+		t.Fatalf("loop: %v", err)
 	}
 	if len(systems) < 2 {
 		t.Fatalf("expected >=2 attempts, got %d", len(systems))
