@@ -4,8 +4,6 @@
 package cli
 
 import (
-	"time"
-
 	"github.com/park-jun-woo/reins/pkg/gate"
 	"github.com/park-jun-woo/reins/pkg/quest"
 )
@@ -26,16 +24,7 @@ func evaluateAndApply(def gate.Definition, s *quest.Session, it *quest.Item, raw
 	} else {
 		verdict = gate.Evaluate(def.Rules(), ctx)
 	}
-	now := time.Now().UTC().Format(time.RFC3339)
-	quest.Apply(it, verdict, now)
-	if err := s.Save(sessionPath); err != nil {
-		return verdict, err
-	}
-	sink, err := newJSONLSink(outPath)
-	if err != nil {
-		return verdict, err
-	}
-	if _, err := exportAndSave(s, sink, sessionPath); err != nil {
+	if err := applyVerdict(s, it, verdict, outPath, sessionPath); err != nil {
 		return verdict, err
 	}
 	return verdict, nil

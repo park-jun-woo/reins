@@ -1,5 +1,5 @@
 //ff:func feature=cli type=command control=sequence level=error
-//ff:what TestLoopBackendError — backend 에러가 루프를 그 에러로 중단시키는지 검증.
+//ff:what TestLoopBackendError — backend 에러가 루프를 abort하지 않고 아이템 FAIL로 강등되어 런이 nil로 완주하는지 검증(BUG-002 회귀의 정면 단언).
 
 package cli
 
@@ -9,7 +9,8 @@ import (
 	"github.com/park-jun-woo/reins/pkg/llm"
 )
 
-// TestLoopBackendError: a backend error aborts the loop with that error.
+// TestLoopBackendError: a backend error no longer aborts the loop — it is demoted to
+// a retryable item FAIL, so the run completes without error (BUG-002 regression).
 func TestLoopBackendError(t *testing.T) {
 	dir := t.TempDir()
 	session := dir + "/session.json"
@@ -23,7 +24,7 @@ func TestLoopBackendError(t *testing.T) {
 	if _, err := newLoopRoot(t, opts, session, out, "scan", "a"); err != nil {
 		t.Fatalf("scan: %v", err)
 	}
-	if _, err := newLoopRoot(t, opts, session, out, "loop"); err == nil {
-		t.Fatal("loop = nil error, want backend error")
+	if _, err := newLoopRoot(t, opts, session, out, "loop"); err != nil {
+		t.Fatalf("loop = %v, want nil (backend error is demoted, not propagated)", err)
 	}
 }

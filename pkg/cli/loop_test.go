@@ -1,5 +1,5 @@
 //ff:func feature=cli type=command control=sequence level=error
-//ff:what TestNewLoopCmd — newLoopCmd가 loop 명령을 만들고 flag 기본값(--model: DefaultModel 미설정 ⇒ ollama:gemma4:e4b, 설정 ⇒ 그 값 / --max-items 0=전부)을 노출하며, backend 해석(주입 LLM 우선, 없으면 --model을 FromFlag로 — 잘못된 flag는 루프 전에 에러), load 실패 전파, --max-items 상한, backend 에러 중단, defer Save 실패의 stderr 경고 표면화를 검증한다.
+//ff:what TestNewLoopCmd — newLoopCmd가 loop 명령을 만들고 flag 기본값(--model: DefaultModel 미설정 ⇒ ollama:gemma4:e4b, 설정 ⇒ 그 값 / --max-items 0=전부)을 노출하며, backend 해석(주입 LLM 우선, 없으면 --model을 FromFlag로 — 잘못된 flag는 루프 전에 에러), load 실패 전파, --max-items 상한, backend 에러 강등(런 완주), defer Save 실패의 stderr 경고 표면화를 검증한다.
 
 package cli
 
@@ -18,8 +18,9 @@ import (
 // defaults (--model falls back to ollama:gemma4:e4b unless opts.DefaultModel is
 // set; --max-items defaults to 0 = all) and its RunE resolves the backend
 // (injected LLM wins, otherwise --model via llm.FromFlag — a bad flag errors
-// before the loop), propagates load failures, caps work at --max-items, aborts
-// on a backend error, and surfaces a deferred Save failure as a stderr warning.
+// before the loop), propagates load failures, caps work at --max-items, demotes
+// a backend error to an item FAIL (the run still completes), and surfaces a
+// deferred Save failure as a stderr warning.
 func TestNewLoopCmd(t *testing.T) {
 	dir := t.TempDir()
 	session := dir + "/session.json"
@@ -86,14 +87,14 @@ func TestNewLoopCmd(t *testing.T) {
 		t.Fatalf("second loop output = %q, want 'processed 1 item(s)'", stdout)
 	}
 
-	// A backend error aborts the loop with that error.
+	// A backend error is demoted to an item FAIL, so the loop completes without error.
 	failSession := filepath.Join(dir, "fail.json")
 	if _, err := newLoopRoot(t, opts, failSession, out, "scan", "x"); err != nil {
 		t.Fatalf("scan fail session: %v", err)
 	}
 	failing := &LoopOptions{LLM: llm.CallFunc(func(system, user string) (string, error) { return "", errBackend })}
-	if _, _, err := runLoop(failing, failSession); err == nil {
-		t.Fatal("loop = nil error, want backend error")
+	if _, _, err := runLoop(failing, failSession); err != nil {
+		t.Fatalf("loop = %v, want nil (backend error is demoted, not propagated)", err)
 	}
 
 	// A deferred Save failure is surfaced as a stderr warning, not a hard error.

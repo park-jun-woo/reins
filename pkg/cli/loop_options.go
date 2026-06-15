@@ -20,4 +20,16 @@ type LoopOptions struct {
 	// LLM, when non-nil, is used as the backend and --model is ignored (for tests
 	// or a fixed backend).
 	LLM llm.Backend
+	// Escalate, when non-nil, is a stronger fallback backend. Once an item's FAIL
+	// carries a RootCause listed in EscalateOn (a capability-bound signal — a
+	// semantic mismatch, not a format slip), the item is retried with Escalate for
+	// its remaining tries (latched on for that item). The gate still holds sole PASS
+	// authority — escalation only changes which generator (L0) is asked. nil ⇒ no
+	// escalation (backward compatible). Cost note: a slow/paid backend here is
+	// invoked only on the residual the primary cannot crack.
+	Escalate llm.Backend
+	// EscalateOn is the set of FAIL RootCause IDs that promote an item to Escalate.
+	// Empty ⇒ never escalate (even when Escalate is set), so format/shape failures
+	// the consumer leaves out stay on the cheap primary.
+	EscalateOn []string
 }

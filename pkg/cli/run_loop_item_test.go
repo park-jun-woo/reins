@@ -56,7 +56,7 @@ func TestRunLoopItem(t *testing.T) {
 		}
 	})
 
-	t.Run("backend error propagates", func(t *testing.T) {
+	t.Run("backend error demotes to item FAIL and does not abort", func(t *testing.T) {
 		dir := t.TempDir()
 		s := quest.New()
 		it := &quest.Item{Key: "a", State: quest.TODO}
@@ -64,8 +64,14 @@ func TestRunLoopItem(t *testing.T) {
 		backend := llm.CallFunc(func(system, user string) (string, error) { return "", errBackend })
 		err := runLoopItem(stubDef{}, &LoopOptions{}, backend, s, it,
 			dir+"/out.jsonl", dir+"/session.json", io.Discard)
-		if err != errBackend {
-			t.Fatalf("err = %v, want errBackend", err)
+		if err != nil {
+			t.Fatalf("err = %v, want nil (generation error is a demoted item FAIL, not a run abort)", err)
+		}
+		if it.Tries != quest.MaxTries {
+			t.Fatalf("Tries = %d, want %d (each generation error consumes a try)", it.Tries, quest.MaxTries)
+		}
+		if it.State != quest.DONE {
+			t.Fatalf("state = %q, want DONE (MaxTries exhausted locks the residual)", it.State)
 		}
 	})
 

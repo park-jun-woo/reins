@@ -8,6 +8,7 @@ plans/
 .clari/
 .claude/
 files/
+bugs/
 
 # go workspace (로컬 전용 — ../toulmin·./comail 미발행 모듈을 잇는 개발 편의. go.mod replace가 SSOT)
 go.work
