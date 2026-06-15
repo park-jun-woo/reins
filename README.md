@@ -1,6 +1,6 @@
 # reins
 
-[![Version](https://img.shields.io/badge/version-v0.1.1-blue.svg)](https://github.com/park-jun-woo/reins/releases)
+[![Version](https://img.shields.io/badge/version-v0.1.2-blue.svg)](https://github.com/park-jun-woo/reins/releases)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 **퀘스트 CLI 개발 프레임워크** (Go). 고삐(reins) — 완료 판정 권한을 AI에서 기계 게이트로 옮긴다.

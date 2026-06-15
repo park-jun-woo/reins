@@ -29,7 +29,9 @@ func FromFlag(flag string) (Backend, error) {
 		return OpenAICompat{URL: "https://api.x.ai/v1/chat/completions", Backend: backend, Model: model}, nil
 	case "gemini":
 		return Gemini{Model: model}, nil
+	case "claude":
+		return newClaudeCLI(model), nil
 	default:
-		return nil, fmt.Errorf("invalid --model backend %q: supported backends: ollama, xai, gemini", backend)
+		return nil, fmt.Errorf("invalid --model backend %q: supported backends: ollama, xai, gemini, claude", backend)
 	}
 }
