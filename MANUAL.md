@@ -30,7 +30,7 @@ irreversible.
 | `pkg/ground` | Network ground primitives — `HTTPBody`·`MXResolves` (injectable, snapshot) | (pure net) |
 | `pkg/textmatch` | Body-containment verification — `Normalize`(NFC)·`Contains`·`MissingTokens`. Hallucination block | x/text |
 | `pkg/temporal` | Time normalization — structured `Spec` → Gregorian ISO | (pure) |
-| `pkg/llm` | LLM call adapters — `Backend`(ollama/xai/gemini)·`CallFunc`·`FromFlag`·auto `num_ctx`. Generation (L0) only; never judges/locks | net/http |
+| `pkg/llm` | LLM call adapters — `Backend`(ollama/xai/gemini HTTP + `claude` subprocess)·`CallFunc`·`FromFlag`·auto `num_ctx`. Generation (L0) only; never judges/locks | net/http, os/exec |
 | `pkg/cli` | Cobra scaffold — `NewQuestCmd` → scan/next/submit/status/export/rules (+ opt-in `loop`) | cobra, llm |
 
 > **toulmin isolation**: only `pkg/graph`/`pkg/ground` are heavy. `pkg/gate`·`pkg/cli` do not import
@@ -147,8 +147,21 @@ for it := s.NextTODO(); it != nil; it = s.NextTODO() {
 - **Feedback parity** — the FAIL text fed to the model is the very string `submit` prints
   (`renderVerdict`/`renderVerdictText` shared), so human-visible and model-visible feedback never drift.
 - **Backends** (`pkg/llm`): `ollama:<model>` (local, no key, `num_ctx` auto-sized from prompt length),
-  `xai:<model>`/`gemini:<model>` (OpenAI-compat / Gemini, **env-only** API keys). `temperature: 0`.
-  Inject `llm.CallFunc` for network-free tests.
+  `xai:<model>`/`gemini:<model>` (OpenAI-compat / Gemini, **env-only** API keys). The first three are
+  HTTP (`net/http`, `temperature: 0`). Inject `llm.CallFunc` for network-free tests.
+- **`claude:<model>` — Claude CLI subprocess** (not HTTP): shells out to `claude -p` (headless print
+  mode) via `os/exec`. Auth is delegated entirely to the CLI's own login (subscription/OAuth/keychain/
+  `ANTHROPIC_API_KEY`) — reins reads no API key for it. `--max-turns 1` pins it to a single-shot L0
+  generator (no agentic tool loop); `--permission-mode dontAsk` keeps it from blocking on a prompt.
+  Model token: `claude:opus`, `claude:sonnet`, or `claude:default` (the `default` sentinel ⇒ the CLI's
+  configured model, since `FromFlag` rejects an empty model). `REINS_CLAUDE_BIN` overrides the binary path.
+  - **Session (default fully stateless)**: each `Complete` is independent (`--no-session-persistence`),
+    matching the HTTP backends and reins' own deterministic FAIL-feedback convergence. Opt into carrying
+    Claude's own conversation across a run with `REINS_CLAUDE_SESSION=continue` — the first reply's
+    `session_id` is carried into later calls as `--resume` (a pointer-receiver adapter holds it). Any
+    other value falls back to stateless (no forged session). Note: session mode double-exposes the prior
+    attempt (model history *and* re-fed FAIL text), so stateless is recommended.
+  - Inject the `execClaude` package-var seam for subprocess-free tests.
 
 ---
 
