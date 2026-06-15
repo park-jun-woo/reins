@@ -1,6 +1,6 @@
 # reins
 
-[![Version](https://img.shields.io/badge/version-v0.1.3-blue.svg)](https://github.com/park-jun-woo/reins/releases)
+[![Version](https://img.shields.io/badge/version-v0.1.4-blue.svg)](https://github.com/park-jun-woo/reins/releases)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 **A quest-CLI development framework** (Go). reins — it moves the authority to judge completion from the AI to a machine gate.

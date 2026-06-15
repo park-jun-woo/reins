@@ -1,5 +1,5 @@
 //ff:func feature=llm type=adapter control=sequence level=error
-//ff:what ClaudeCLI.Complete — `claude -p` argv를 빌드(plain claude -p, --bare 미사용)하고 execClaude seam으로 돌려 단일턴 생성을 수행한다. --output-format json·--append-system-prompt system(전체 교체 아님)·--max-turns(MaxTurns||1, 도구 루프 차단)·--permission-mode dontAsk·--tools ""(전 도구 비활성 — 도구 시도→max_turns 에러 방지, L0는 순수 텍스트); Model 있으면 --model, Stateless→--no-session-persistence·Continue→sid 있으면 --resume sid. user는 stdin(긴 본문 arg-length 회피), ctx는 llmTimeout 300s. JSON(result/session_id/is_error/subtype) 파싱: 비정상 종료(stderr 동봉)·파싱 실패·is_error 각각 에러; Continue면 sid 갱신; result 반환.
+//ff:what ClaudeCLI.Complete — `claude -p` argv를 빌드(plain claude -p, --bare 미사용)하고 execClaude seam으로 돌려 단일턴 생성을 수행한다. --output-format json·system은 no-tools 프리앰블 선행 후 --append-system-prompt로 전달(전체 교체 아님)·--max-turns(MaxTurns||1, 도구 루프 차단)·--permission-mode dontAsk·--tools ""(전 도구 비활성 — 도구 시도→max_turns 에러 방지, L0는 순수 텍스트); Model 있으면 --model, Stateless→--no-session-persistence·Continue→sid 있으면 --resume sid. user는 stdin(긴 본문 arg-length 회피), ctx는 llmTimeout 300s. JSON(result/session_id/is_error/subtype) 파싱: 비정상 종료(stderr 동봉)·파싱 실패·is_error 각각 에러; Continue면 sid 갱신; result 반환.
 
 package llm
 
@@ -26,7 +26,7 @@ func (c *ClaudeCLI) Complete(system, user string) (string, error) {
 	argv := []string{
 		"-p",
 		"--output-format", "json",
-		"--append-system-prompt", system,
+		"--append-system-prompt", withNoToolsPreamble(system),
 		"--max-turns", strconv.Itoa(maxTurns),
 		"--permission-mode", "dontAsk",
 		// Disable all tools: L0 generation is pure text. Without this the model may

@@ -43,8 +43,8 @@ func TestClaudeCLICompleteStateless(t *testing.T) {
 	if v := flagValue(gotArgv, "--output-format"); v != "json" {
 		t.Fatalf("--output-format = %q, want json", v)
 	}
-	if v := flagValue(gotArgv, "--append-system-prompt"); v != "SYS" {
-		t.Fatalf("--append-system-prompt = %q, want SYS", v)
+	if v := flagValue(gotArgv, "--append-system-prompt"); v != withNoToolsPreamble("SYS") {
+		t.Fatalf("--append-system-prompt = %q, want %q", v, withNoToolsPreamble("SYS"))
 	}
 	if v := flagValue(gotArgv, "--max-turns"); v != "1" {
 		t.Fatalf("--max-turns = %q, want 1", v)
