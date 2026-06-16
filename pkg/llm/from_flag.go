@@ -31,7 +31,11 @@ func FromFlag(flag string) (Backend, error) {
 		return Gemini{Model: model}, nil
 	case "claude":
 		return newClaudeCLI(model), nil
+	case "grok":
+		return newGrokCLI(model), nil
+	case "codex":
+		return newCodexCLI(model), nil
 	default:
-		return nil, fmt.Errorf("invalid --model backend %q: supported backends: ollama, xai, gemini, claude", backend)
+		return nil, fmt.Errorf("invalid --model backend %q: supported backends: ollama, xai, gemini, claude, grok, codex", backend)
 	}
 }

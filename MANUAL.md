@@ -30,7 +30,7 @@ irreversible.
 | `pkg/ground` | Network ground primitives — `HTTPBody`·`MXResolves` (injectable, snapshot) | (pure net) |
 | `pkg/textmatch` | Body-containment verification — `Normalize`(NFC)·`Contains`·`MissingTokens`. Hallucination block | x/text |
 | `pkg/temporal` | Time normalization — structured `Spec` → Gregorian ISO | (pure) |
-| `pkg/llm` | LLM call adapters — `Backend`(ollama/xai/gemini HTTP + `claude` subprocess)·`CallFunc`·`FromFlag`·auto `num_ctx`. Generation (L0) only; never judges/locks | net/http, os/exec |
+| `pkg/llm` | LLM call adapters — `Backend`(ollama/xai/gemini HTTP + `claude`/`grok`/`codex` subprocess)·`CallFunc`·`FromFlag`·shared `runSubprocess`/no-tools preamble·auto `num_ctx`. Generation (L0) only; never judges/locks | net/http, os/exec |
 | `pkg/cli` | Cobra scaffold — `NewQuestCmd` → scan/next/submit/status/export/rules (+ opt-in `loop`) | cobra, llm |
 
 > **toulmin isolation**: only `pkg/graph`/`pkg/ground` are heavy. `pkg/gate`·`pkg/cli` do not import
@@ -146,22 +146,38 @@ for it := s.NextTODO(); it != nil; it = s.NextTODO() {
   coaching on retry.
 - **Feedback parity** — the FAIL text fed to the model is the very string `submit` prints
   (`renderVerdict`/`renderVerdictText` shared), so human-visible and model-visible feedback never drift.
-- **Backends** (`pkg/llm`): `ollama:<model>` (local, no key, `num_ctx` auto-sized from prompt length),
-  `xai:<model>`/`gemini:<model>` (OpenAI-compat / Gemini, **env-only** API keys). The first three are
-  HTTP (`net/http`, `temperature: 0`). Inject `llm.CallFunc` for network-free tests.
-- **`claude:<model>` — Claude CLI subprocess** (not HTTP): shells out to `claude -p` (headless print
-  mode) via `os/exec`. Auth is delegated entirely to the CLI's own login (subscription/OAuth/keychain/
-  `ANTHROPIC_API_KEY`) — reins reads no API key for it. `--max-turns 1` pins it to a single-shot L0
-  generator (no agentic tool loop); `--permission-mode dontAsk` keeps it from blocking on a prompt.
-  Model token: `claude:opus`, `claude:sonnet`, or `claude:default` (the `default` sentinel ⇒ the CLI's
-  configured model, since `FromFlag` rejects an empty model). `REINS_CLAUDE_BIN` overrides the binary path.
-  - **Session (default fully stateless)**: each `Complete` is independent (`--no-session-persistence`),
-    matching the HTTP backends and reins' own deterministic FAIL-feedback convergence. Opt into carrying
-    Claude's own conversation across a run with `REINS_CLAUDE_SESSION=continue` — the first reply's
-    `session_id` is carried into later calls as `--resume` (a pointer-receiver adapter holds it). Any
-    other value falls back to stateless (no forged session). Note: session mode double-exposes the prior
-    attempt (model history *and* re-fed FAIL text), so stateless is recommended.
-  - Inject the `execClaude` package-var seam for subprocess-free tests.
+- **Backends** (`pkg/llm`): **HTTP** — `ollama:<model>` (local, no key, `num_ctx` auto-sized from prompt
+  length), `xai:<model>`/`gemini:<model>` (OpenAI-compat / Gemini, **env-only** API keys); all three are
+  `net/http` at `temperature: 0`. **Subprocess** — `claude:<model>`/`grok:<model>`/`codex:<model>` shell
+  out to a CLI via `os/exec`; auth is delegated entirely to that CLI's own login (subscription/OAuth/
+  keychain/env key) so reins reads **no API key** for them. All subprocess backends share `runSubprocess`
+  and the fixed no-tools preamble (`withNoToolsPreamble`); each exposes a `var exec<Name>` package seam for
+  subprocess-free tests, a pointer-receiver adapter that carries an opt-in session id, and a `:<model>` or
+  `:default` token (`default` ⇒ the CLI's configured model, since `FromFlag` rejects an empty model).
+  Inject `llm.CallFunc` for network-free HTTP tests.
+- **`claude:<model>` — Claude CLI** (`claude -p`, headless print): `--max-turns 1` pins a single-shot L0
+  generator (no agentic tool loop), `--tools ""` + no-tools preamble block tool narration,
+  `--permission-mode dontAsk` keeps it from blocking. Token `claude:opus`/`claude:sonnet`/`claude:default`;
+  `REINS_CLAUDE_BIN` overrides the binary; envelope `--output-format json` → `result`/`session_id`/`is_error`.
+- **`grok:<model>` — Grok CLI** (`grok -p`, single-turn): the claude twin (`--max-turns 1` +
+  `--tools ""`/`--disable-web-search`/`--no-subagents`/`--no-memory` + preamble + `--permission-mode dontAsk`),
+  reaching the same xAI models as the `xai:` HTTP backend but over the **CLI login (no API key)**. The user
+  prompt travels via `--prompt-file` (grok's `-p` takes the prompt as a value; stdin is not accepted).
+  Envelope `--output-format json` → `text`/`sessionId`/`stopReason` (success = `EndTurn`). `REINS_GROK_BIN`
+  overrides the binary.
+- **`codex:<model>` — Codex CLI** (`codex exec`, headless agent): has **no `--max-turns`**, so the single-shot
+  L0 guarantee leans on `-s read-only` (block side effects) + the no-tools preamble + `--ignore-user-config`/
+  `--ignore-rules` (keep `CODEX_HOME` auth, drop repo `AGENTS.md`/rules). Output is a `--json` **JSONL event
+  stream**: the last `item.completed` with `agent_message` is the result text; `thread.started.thread_id`
+  is the session id. The system prompt is prepended into the stdin prompt (codex has no system channel).
+  Token `codex:gpt-5`/`codex:o3`/`codex:default`; `REINS_CODEX_BIN` overrides the binary.
+- **Session (subprocess backends, default fully stateless)**: each `Complete` is independent (claude
+  `--no-session-persistence` / codex `--ephemeral` / grok no-resume), matching the HTTP backends and reins'
+  own deterministic FAIL-feedback convergence. Opt into carrying the CLI's own conversation across a run with
+  `REINS_<NAME>_SESSION=continue` — the first reply's session id is carried into later calls as `--resume`
+  (claude/grok) or the `exec resume <id>` subcommand (codex; the read-only flag stays at exec level, before
+  the subcommand). Any other value falls back to stateless (no forged session). Note: session mode
+  double-exposes the prior attempt (model history *and* re-fed FAIL text), so stateless is recommended.
 
 ---
 

@@ -1,6 +1,6 @@
 # reins
 
-[![Version](https://img.shields.io/badge/version-v0.1.4-blue.svg)](https://github.com/park-jun-woo/reins/releases)
+[![Version](https://img.shields.io/badge/version-v0.2.0-blue.svg)](https://github.com/park-jun-woo/reins/releases)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 **A quest-CLI development framework** (Go). reins — it moves the authority to judge completion from the AI to a machine gate.
@@ -49,7 +49,7 @@ what to change to win").
 | `pkg/gate` | Gate contract — `Definition`·`Rule`·`Context`·`Evaluate`(level aggregation)·`Evaluator`(graph hook) | quest |
 | `pkg/graph` | Defeat-graph backend — `Graph`·`Warrant`·`Counter`·`Attacks`·`Supersedes`·`EvaluateStaged` | gate, quest, toulmin |
 | `pkg/ground` | Network ground primitives — `HTTPBody`·`MXResolves` (injectable `Resolver`, per-request snapshot) | (pure net) |
-| `pkg/llm` | LLM call adapters — ollama/xai/gemini chat completion. **Generation (L0) only; nothing to do with judging/ratchet** (authority asymmetry). Auto-sized num_ctx, env-only keys | net/http |
+| `pkg/llm` | LLM call adapters — ollama/xai/gemini (HTTP) + claude/grok/codex (CLI subprocess). **Generation (L0) only; nothing to do with judging/ratchet** (authority asymmetry). Auto-sized num_ctx, env-only keys (HTTP) or delegated CLI login (subprocess) | net/http, os/exec |
 | `pkg/cli` | Cobra scaffold — `NewQuestCmd` → scan/next/submit/status/export/rules (+ opt-in `loop`) | cobra, quest, gate, llm |
 
 ## Command skeleton (the how-make-quest canon)
@@ -82,8 +82,9 @@ for each remaining TODO:
   gate (machine) only.** On exceeding MaxTries it locks DONE → the loop terminates monotonically.
 - **Per-root-cause system coaching** — via `Verdict.RootCause` (exposed deterministically by both the flat and
   graph backends), rule-specific instructions for the rule just missed are fed back.
-- **Backends** — `--model ollama:gemma4:e4b` (default) / `xai:…` / `gemini:…`. Local ollama needs no key; num_ctx
-  is auto-sized from the prompt length.
+- **Backends** — HTTP: `--model ollama:gemma4:e4b` (default) / `xai:…` / `gemini:…` (local ollama needs no key;
+  num_ctx auto-sized from prompt length). CLI subprocess: `claude:…` / `grok:…` / `codex:…` — single-shot L0
+  generators over the CLI's own login (no API key); opt into session continuity with `REINS_<NAME>_SESSION=continue`.
 
 ```bash
 ccnews run --max-warcs 1                 # seed (streaming ingestion)

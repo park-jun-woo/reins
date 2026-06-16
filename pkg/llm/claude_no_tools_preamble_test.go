@@ -12,17 +12,17 @@ import (
 // an empty system yields the preamble alone, and a non-empty system is appended
 // after the preamble (preamble leads, system follows).
 func TestWithNoToolsPreamble(t *testing.T) {
-	if got := withNoToolsPreamble(""); got != claudeNoToolsPreamble {
-		t.Fatalf("empty system = %q, want preamble alone %q", got, claudeNoToolsPreamble)
+	if got := withNoToolsPreamble(""); got != noToolsPreamble {
+		t.Fatalf("empty system = %q, want preamble alone %q", got, noToolsPreamble)
 	}
 
 	const sys = "Emit JSON per S-13."
 	got := withNoToolsPreamble(sys)
-	want := claudeNoToolsPreamble + "\n\n" + sys
+	want := noToolsPreamble + "\n\n" + sys
 	if got != want {
 		t.Fatalf("non-empty system = %q, want %q", got, want)
 	}
-	if !strings.HasPrefix(got, claudeNoToolsPreamble) {
+	if !strings.HasPrefix(got, noToolsPreamble) {
 		t.Fatalf("preamble must lead: %q", got)
 	}
 	if !strings.Contains(got, sys) {
