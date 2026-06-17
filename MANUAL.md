@@ -30,7 +30,7 @@ irreversible.
 | `pkg/ground` | Network ground primitives — `HTTPBody`·`MXResolves` (injectable, snapshot) | (pure net) |
 | `pkg/textmatch` | Body-containment verification — `Normalize`(NFC)·`Contains`·`MissingTokens`. Hallucination block | x/text |
 | `pkg/temporal` | Time normalization — structured `Spec` → Gregorian ISO | (pure) |
-| `pkg/llm` | LLM call adapters — `Backend`(ollama/xai/gemini HTTP + `claude`/`grok`/`codex` subprocess)·`CallFunc`·`FromFlag`·shared `runSubprocess`/no-tools preamble·auto `num_ctx`. Generation (L0) only; never judges/locks | net/http, os/exec |
+| `pkg/llm` | LLM call adapters — `Backend`(ollama/xai/gemini HTTP + `claude`/`grok`/`codex`/`geminicli` subprocess)·`CallFunc`·`FromFlag`·shared `runSubprocess`/no-tools preamble·auto `num_ctx`. Generation (L0) only; never judges/locks | net/http, os/exec |
 | `pkg/cli` | Cobra scaffold — `NewQuestCmd` → scan/next/submit/status/export/rules (+ opt-in `loop`) | cobra, llm |
 
 > **toulmin isolation**: only `pkg/graph`/`pkg/ground` are heavy. `pkg/gate`·`pkg/cli` do not import
@@ -148,7 +148,7 @@ for it := s.NextTODO(); it != nil; it = s.NextTODO() {
   (`renderVerdict`/`renderVerdictText` shared), so human-visible and model-visible feedback never drift.
 - **Backends** (`pkg/llm`): **HTTP** — `ollama:<model>` (local, no key, `num_ctx` auto-sized from prompt
   length), `xai:<model>`/`gemini:<model>` (OpenAI-compat / Gemini, **env-only** API keys); all three are
-  `net/http` at `temperature: 0`. **Subprocess** — `claude:<model>`/`grok:<model>`/`codex:<model>` shell
+  `net/http` at `temperature: 0`. **Subprocess** — `claude:<model>`/`grok:<model>`/`codex:<model>`/`geminicli:<model>` shell
   out to a CLI via `os/exec`; auth is delegated entirely to that CLI's own login (subscription/OAuth/
   keychain/env key) so reins reads **no API key** for them. All subprocess backends share `runSubprocess`
   and the fixed no-tools preamble (`withNoToolsPreamble`); each exposes a `var exec<Name>` package seam for
@@ -171,12 +171,20 @@ for it := s.NextTODO(); it != nil; it = s.NextTODO() {
   stream**: the last `item.completed` with `agent_message` is the result text; `thread.started.thread_id`
   is the session id. The system prompt is prepended into the stdin prompt (codex has no system channel).
   Token `codex:gpt-5`/`codex:o3`/`codex:default`; `REINS_CODEX_BIN` overrides the binary.
+- **`geminicli:<model>` — Gemini CLI** (`gemini -p`, headless agent): same model family as the `gemini:` HTTP
+  backend but over the **Google-account login (no `GEMINI_API_KEY`)** — hence a *separate token*, since
+  `gemini:` is taken by the HTTP backend. Like codex it has **no `--max-turns`**, so the single-shot L0
+  guarantee leans on `--approval-mode plan` (read-only) + the no-tools preamble. The prompt rides on stdin
+  (`-p ""` triggers headless; stdin carries the body). Output is `--output-format json` → `.response`
+  (result) / `.error` / `.stats.tools.calls` (a `calls == 0` smoke confirms no tool was used). Token
+  `geminicli:gemini-2.5-pro`/`geminicli:gemini-2.5-flash`/`geminicli:default`; `REINS_GEMINI_BIN` overrides the binary.
 - **Session (subprocess backends, default fully stateless)**: each `Complete` is independent (claude
   `--no-session-persistence` / codex `--ephemeral` / grok no-resume), matching the HTTP backends and reins'
   own deterministic FAIL-feedback convergence. Opt into carrying the CLI's own conversation across a run with
   `REINS_<NAME>_SESSION=continue` — the first reply's session id is carried into later calls as `--resume`
-  (claude/grok) or the `exec resume <id>` subcommand (codex; the read-only flag stays at exec level, before
-  the subcommand). Any other value falls back to stateless (no forged session). Note: session mode
+  (claude/grok), the `exec resume <id>` subcommand (codex; the read-only flag stays at exec level, before
+  the subcommand), or a reins-issued UUID via `--session-id` then `--resume latest` (geminicli). Any other
+  value falls back to stateless (no forged session). Note: session mode
   double-exposes the prior attempt (model history *and* re-fed FAIL text), so stateless is recommended.
 
 ---
