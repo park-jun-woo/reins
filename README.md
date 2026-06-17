@@ -1,7 +1,12 @@
+<p align="center">
+  <img src="docs/reins.webp" alt="reins — AI generation is probabilistic; a machine gate locks PASS via a one-way ratchet, and verified progress accumulates" width="100%">
+</p>
+
 # reins
 
 [![Version](https://img.shields.io/badge/version-v0.2.0-blue.svg)](https://github.com/park-jun-woo/reins/releases)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![skills.sh](https://skills.sh/b/park-jun-woo/reins)](https://skills.sh/park-jun-woo/reins)
 
 **A quest-CLI development framework** (Go). reins — it moves the authority to judge completion from the AI to a machine gate.
 *"Generation is probabilistic, verification is deterministic."* (A reusable implementation of the [how-make-quest](https://www.parkjunwoo.com/tech/how-make-quest.md) methodology.)
