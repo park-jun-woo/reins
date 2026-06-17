@@ -1,6 +1,6 @@
 ---
 name: reins-quest
-description: Build a quest CLI in Go with the reins framework — it moves the authority to declare "done" from the AI to a deterministic machine gate ("generation is probabilistic; verification is deterministic"). Use this skill when asked to build a quest CLI, a reins consumer, a generate→verify→retry loop, a deterministic completion gate, or an unattended LLM generation loop whose output a machine judges. Plug in one domain contract (gate.Definition) and reins supplies the ratchet, command skeleton, aggregation, feedback, and export. Triggers on: reins, quest CLI, gate.Definition, gate.Rule, deterministic gate, "생성은 AI 판정은 기계", quest-CLI, unattended loop.
+description: Build a quest CLI in Go with the reins framework — it moves the authority to declare "done" from the AI to a deterministic machine gate ("generation is probabilistic; verification is deterministic"). Use this skill when asked to build a quest CLI, a reins consumer, a generate→verify→retry loop, a deterministic completion gate, or an unattended LLM generation loop whose output a machine judges. Plug in one domain contract (gate.Definition) and reins supplies the ratchet, command skeleton, aggregation, feedback, and export. Triggers on keywords like reins, quest CLI, gate.Definition, gate.Rule, deterministic gate, quest-CLI, or unattended loop.
 license: MIT
 metadata:
   author: park-jun-woo
