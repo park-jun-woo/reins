@@ -17,6 +17,36 @@ disposable; progress accumulates.
 
 > **For the detailed API and patterns, see [MANUAL.md](MANUAL.md)** (Manual for AI Agents). This document is an overview.
 
+## Quick start
+
+**1. Install the skill** so your coding agent knows how to build a reins quest (recommended):
+
+```bash
+npx skills add park-jun-woo/reins
+```
+
+**2. Ask your agent** — Claude Code, Codex, etc. — to build a quest. For example:
+
+```
+/reins-quest Build a quest that summarizes Common Crawl news by the 5W1H principle (who/what/when/where/why/how)
+```
+
+The agent reads [SKILL.md](SKILL.md) and scaffolds the `gate.Definition` for you.
+
+**3. Or build it by hand** — add the library, then implement the 4-method `gate.Definition` and wire one line of `main`:
+
+```bash
+go get github.com/park-jun-woo/reins@latest
+```
+
+```go
+func main() {
+    cli.NewQuestCmd("myquest", myDef{}, cli.Options{Version: "0.1"}).Execute()
+}
+```
+
+That gives you the full command skeleton — `scan / next / submit / status / export / rules` (and the opt-in `loop`). See [Making a quest](#making-a-quest) below for the gate, and [SKILL.md](SKILL.md) for the complete walkthrough.
+
 ## Core model
 
 - **Ratchet** — a one-way state machine. Once PASS, it is irreversible; remaining work decreases monotonically
