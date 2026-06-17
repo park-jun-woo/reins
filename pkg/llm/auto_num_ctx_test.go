@@ -31,7 +31,7 @@ func TestAutoNumCtx(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			got := autoNumCtx(strings.Repeat("a", c.promptLen))
+			got := autoNumCtx(strings.Repeat("a", c.promptLen), 0)
 			if got != c.want {
 				t.Fatalf("autoNumCtx(len=%d) = %d, want %d", c.promptLen, got, c.want)
 			}

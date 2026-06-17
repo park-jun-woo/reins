@@ -12,7 +12,7 @@ import (
 func TestAutoNumCtxMonotonic(t *testing.T) {
 	prev := 0
 	for n := 0; n <= 200000; n += 5000 {
-		got := autoNumCtx(strings.Repeat("z", n))
+		got := autoNumCtx(strings.Repeat("z", n), 0)
 		if got < prev {
 			t.Fatalf("autoNumCtx not monotonic at len=%d: %d < %d", n, got, prev)
 		}

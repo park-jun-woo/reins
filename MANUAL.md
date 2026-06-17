@@ -148,7 +148,15 @@ for it := s.NextTODO(); it != nil; it = s.NextTODO() {
   (`renderVerdict`/`renderVerdictText` shared), so human-visible and model-visible feedback never drift.
 - **Backends** (`pkg/llm`): **HTTP** — `ollama:<model>` (local, no key, `num_ctx` auto-sized from prompt
   length), `xai:<model>`/`gemini:<model>` (OpenAI-compat / Gemini, **env-only** API keys); all three are
-  `net/http` at `temperature: 0`. **Subprocess** — `claude:<model>`/`grok:<model>`/`codex:<model>`/`geminicli:<model>` shell
+  `net/http`. **HTTP options** (struct fields; zero ⇒ prior default, fully backward-compatible): all three take
+  `MaxOutputTokens int` (0 ⇒ 2048 — raise it so reasoning models like qwen3/gpt-oss aren't truncated; for ollama
+  it also grows the auto-sized `num_ctx` so the window holds the larger output) and `Temperature *float64`
+  (nil ⇒ 0); ollama additionally takes `Think *bool` (false ⇒ disable reasoning to save the output budget).
+  Set them on the injected backend, **or via a `--model` query**: `ollama:qwen3:8b?max_output_tokens=8192&think=false`
+  / `xai:grok-4?max_output_tokens=4096&temperature=0.7`. `FromFlag` parses `?k=v&…` after the model and rejects
+  any key a backend doesn't accept (allowed: ollama `max_output_tokens`/`num_ctx`/`temperature`/`think`, xai &
+  gemini `max_output_tokens`/`temperature`, subprocess none) — no silent caps. **Subprocess** —
+  `claude:<model>`/`grok:<model>`/`codex:<model>`/`geminicli:<model>` shell
   out to a CLI via `os/exec`; auth is delegated entirely to that CLI's own login (subscription/OAuth/
   keychain/env key) so reins reads **no API key** for them. All subprocess backends share `runSubprocess`
   and the fixed no-tools preamble (`withNoToolsPreamble`); each exposes a `var exec<Name>` package seam for

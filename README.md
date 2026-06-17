@@ -4,7 +4,7 @@
 
 # reins
 
-[![Version](https://img.shields.io/badge/version-v0.2.1-blue.svg)](https://github.com/park-jun-woo/reins/releases)
+[![Version](https://img.shields.io/badge/version-v0.2.2-blue.svg)](https://github.com/park-jun-woo/reins/releases)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![skills.sh](https://skills.sh/b/park-jun-woo/reins)](https://skills.sh/park-jun-woo/reins)
 
@@ -120,6 +120,9 @@ for each remaining TODO:
 - **Backends** — HTTP: `--model ollama:gemma4:e4b` (default) / `xai:…` / `gemini:…` (local ollama needs no key;
   num_ctx auto-sized from prompt length). CLI subprocess: `claude:…` / `grok:…` / `codex:…` / `geminicli:…` — single-shot
   L0 generators over the CLI's own login (no API key); opt into session continuity with `REINS_<NAME>_SESSION=continue`.
+- **HTTP options** — tune output limit / temperature / reasoning per backend, e.g. `--model ollama:qwen3:8b?max_output_tokens=8192&think=false`
+  (raise `max_output_tokens` so reasoning models aren't truncated; ollama grows `num_ctx` to match). Zero values keep the prior
+  defaults (2048 / temp 0), so backward-compatible; an unknown key for a backend is a loud error, not a silent cap.
 
 ```bash
 ccnews run --max-warcs 1                 # seed (streaming ingestion)

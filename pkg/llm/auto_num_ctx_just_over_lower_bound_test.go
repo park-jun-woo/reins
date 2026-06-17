@@ -12,7 +12,7 @@ import (
 // up to the next step (4096), not the lower clamp.
 func TestAutoNumCtxJustOverLowerBound(t *testing.T) {
 	// len 8 ⇒ len/4 = 2 ⇒ need 2050 > 2048 ⇒ next step 4096.
-	if got := autoNumCtx(strings.Repeat("x", 8)); got != 4096 {
+	if got := autoNumCtx(strings.Repeat("x", 8), 0); got != 4096 {
 		t.Fatalf("autoNumCtx(len=8) = %d, want 4096", got)
 	}
 }

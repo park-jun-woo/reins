@@ -1,5 +1,5 @@
 //ff:func feature=llm type=adapter control=sequence level=error
-//ff:what OpenAICompat.Complete — OpenAI 호환 chat completions endpoint(xai 등) 호출. URL·Backend(키 조회용 이름)·Model을 갖고 Authorization: Bearer <env key>로 공용 llmClient(300s 타임아웃) POST. temperature 0 고정, max_tokens 2048. choices[0].message.content 반환.
+//ff:what OpenAICompat.Complete — OpenAI 호환 chat completions endpoint(xai 등) 호출. URL·Backend(키 조회용 이름)·Model을 갖고 Authorization: Bearer <env key>로 공용 llmClient(300s 타임아웃) POST. max_tokens는 MaxOutputTokens(0⇒2048), temperature는 Temperature(nil⇒0). choices[0].message.content 반환.
 
 package llm
 
@@ -17,14 +17,22 @@ func (o OpenAICompat) Complete(system, user string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	eff := o.MaxOutputTokens
+	if eff == 0 {
+		eff = 2048
+	}
+	temperature := 0.0
+	if o.Temperature != nil {
+		temperature = *o.Temperature
+	}
 	body := map[string]any{
 		"model": o.Model,
 		"messages": []map[string]string{
 			{"role": "system", "content": system},
 			{"role": "user", "content": user},
 		},
-		"max_tokens":  2048,
-		"temperature": 0,
+		"max_tokens":  eff,
+		"temperature": temperature,
 	}
 	payload, err := json.Marshal(body)
 	if err != nil {

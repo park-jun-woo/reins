@@ -13,14 +13,14 @@ import (
 // old bytes/4 heuristic underestimated, the Korean window is strictly larger.
 func TestAutoNumCtxCJK(t *testing.T) {
 	for _, n := range []int{0, 100, 500, 2000, 8000, 30000} {
-		ko := autoNumCtx(strings.Repeat("가", n))
-		en := autoNumCtx(strings.Repeat("a", n))
+		ko := autoNumCtx(strings.Repeat("가", n), 0)
+		en := autoNumCtx(strings.Repeat("a", n), 0)
 		if ko < en {
 			t.Fatalf("chars=%d: korean ctx %d < english ctx %d", n, ko, en)
 		}
 	}
 	// 2000 chars: korean need = 2000*2+2048 = 6048 → 8192; english need = 2548 → 4096.
-	if ko, en := autoNumCtx(strings.Repeat("가", 2000)), autoNumCtx(strings.Repeat("a", 2000)); ko <= en {
+	if ko, en := autoNumCtx(strings.Repeat("가", 2000), 0), autoNumCtx(strings.Repeat("a", 2000), 0); ko <= en {
 		t.Fatalf("chars=2000: korean ctx %d not strictly greater than english %d", ko, en)
 	}
 }

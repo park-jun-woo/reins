@@ -4,7 +4,7 @@ description: Build a quest CLI in Go with the reins framework — it moves the a
 license: MIT
 metadata:
   author: park-jun-woo
-  version: "0.2.1"
+  version: "0.2.2"
 ---
 
 # reins-quest — Build a Quest CLI Whose "Done" Is Judged by a Machine
@@ -167,12 +167,13 @@ Run: `myquest loop [--model backend:model] [--max-items N]`. On the `MaxTries`-t
 | Token | Transport | Auth |
 |---|---|---|
 | `ollama:<model>` | HTTP (local, `num_ctx` auto-sized) | none |
-| `xai:<model>` / `gemini:<model>` | HTTP (OpenAI-compat / Gemini, `temperature:0`) | **env-only** API key |
+| `xai:<model>` / `gemini:<model>` | HTTP (OpenAI-compat / Gemini) | **env-only** API key |
 | `claude:<model>` | subprocess `claude -p` (`--max-turns 1 --tools ""`) | CLI login — **no API key read** |
 | `grok:<model>` | subprocess `grok -p` (single-turn) | CLI login — **no API key read** |
 | `codex:<model>` | subprocess `codex exec` (`-s read-only`) | CLI login — **no API key read** |
 | `geminicli:<model>` | subprocess `gemini -p` (`--approval-mode plan`) | Google login — **no API key read** (separate token; `gemini:` is the HTTP backend) |
 
+- **HTTP options** (struct fields, zero ⇒ prior default = backward-compatible): all three HTTP backends take `MaxOutputTokens int` (0 ⇒ 2048) and `Temperature *float64` (nil ⇒ 0); ollama also takes `Think *bool`. Or pass them in the `--model` query: `ollama:qwen3:8b?max_output_tokens=8192&think=false`. Raise `max_output_tokens` so reasoning models aren't truncated (ollama grows `num_ctx` to match). An unknown key for a backend is a loud error (allowed: ollama `max_output_tokens`/`num_ctx`/`temperature`/`think`, xai & gemini `max_output_tokens`/`temperature`, subprocess none).
 - Subprocess backends: token `:<model>` or `:default` (CLI's configured model). `REINS_<NAME>_BIN` overrides the binary.
 - **Session is fully stateless by default** (matches HTTP backends + reins' deterministic FAIL-feedback convergence). Opt into carrying the CLI's own conversation with `REINS_<NAME>_SESSION=continue` (stateless recommended — session mode double-exposes the prior attempt).
 - Inject `llm.CallFunc` (HTTP) or the `exec<Name>` package-var seam (subprocess) for network-free tests.

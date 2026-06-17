@@ -1,5 +1,5 @@
 //ff:func feature=llm type=adapter control=sequence level=error
-//ff:what Gemini.Complete — Google Gemini generateContent endpoint 호출. system+user를 단일 user 턴으로 병합(Gemini 규약), temperature 0 고정, maxOutputTokens 2048. API 키는 env GEMINI_API_KEY를 x-goog-api-key 헤더로 전달(URL 쿼리 금지 — *url.Error가 전체 URL을 포함해 키가 로그로 누출되는 것을 차단). 공용 llmClient(300s 타임아웃) 사용. candidates[0].content.parts[0].text 반환.
+//ff:what Gemini.Complete — Google Gemini generateContent endpoint 호출. system+user를 단일 user 턴으로 병합(Gemini 규약), maxOutputTokens는 MaxOutputTokens(0⇒2048), temperature는 Temperature(nil⇒0). API 키는 env GEMINI_API_KEY를 x-goog-api-key 헤더로 전달(URL 쿼리 금지 — *url.Error가 전체 URL을 포함해 키가 로그로 누출되는 것을 차단). 공용 llmClient(300s 타임아웃) 사용. candidates[0].content.parts[0].text 반환.
 
 package llm
 
@@ -26,6 +26,14 @@ func (g Gemini) Complete(system, user string) (string, error) {
 	}
 	endpoint := fmt.Sprintf("%s/v1beta/models/%s:generateContent", base, g.Model)
 
+	eff := g.MaxOutputTokens
+	if eff == 0 {
+		eff = 2048
+	}
+	temperature := 0.0
+	if g.Temperature != nil {
+		temperature = *g.Temperature
+	}
 	combined := system + "\n\n" + user
 	body := map[string]any{
 		"contents": []map[string]any{
@@ -37,8 +45,8 @@ func (g Gemini) Complete(system, user string) (string, error) {
 			},
 		},
 		"generationConfig": map[string]any{
-			"temperature":     0,
-			"maxOutputTokens": 2048,
+			"temperature":     temperature,
+			"maxOutputTokens": eff,
 		},
 	}
 	payload, err := json.Marshal(body)
